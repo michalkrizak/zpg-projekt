@@ -1,0 +1,16 @@
+/x64/
+/Debug/
+/Release/
+/ipch/
+/*.obj
+/*.pdb
+/*.exe
+/*.dll
+/*.log
+
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+/.vs/
