@@ -2,10 +2,17 @@
 #include <stdexcept>
 #include <iostream>
 
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
 Window::Window(int width, int height, const std::string& title) {
     if (!glfwInit()) {
         throw std::runtime_error("Failed to initialize GLFW");
     }
+
+    // Povolit zmìnu velikosti okna
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!window) {
@@ -18,6 +25,12 @@ Window::Window(int width, int height, const std::string& title) {
     if (glewInit() != GLEW_OK) {
         throw std::runtime_error("Failed to initialize GLEW");
     }
+
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    glViewport(0, 0, fbWidth, fbHeight);
 }
 
 Window::~Window() {

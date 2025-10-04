@@ -16,6 +16,9 @@
     <Filter Include="Header Files\Transformations">
       <UniqueIdentifier>{be87a867-6d62-4174-a5d6-8ff28d401484}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Models">
+      <UniqueIdentifier>{1b670739-d507-4c5c-a776-f36377f9f4cf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Window.cpp">
@@ -44,6 +47,30 @@
     </ClCompile>
     <ClCompile Include="TransformAction.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sphere.cpp">
+      <Filter>Models</Filter>
+    </ClCompile>
+    <ClCompile Include="bushes.cpp">
+      <Filter>Models</Filter>
+    </ClCompile>
+    <ClCompile Include="gift.cpp">
+      <Filter>Models</Filter>
+    </ClCompile>
+    <ClCompile Include="plain.cpp">
+      <Filter>Models</Filter>
+    </ClCompile>
+    <ClCompile Include="suzi_flat.cpp">
+      <Filter>Models</Filter>
+    </ClCompile>
+    <ClCompile Include="suzi_smooth.cpp">
+      <Filter>Models</Filter>
+    </ClCompile>
+    <ClCompile Include="tree.cpp">
+      <Filter>Models</Filter>
+    </ClCompile>
+    <ClCompile Include="house.cpp">
+      <Filter>Models</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -91,6 +118,30 @@
     </ClInclude>
     <ClInclude Include="Scale.h">
       <Filter>Header Files\Transformations</Filter>
+    </ClInclude>
+    <ClInclude Include="sphere.h">
+      <Filter>Models</Filter>
+    </ClInclude>
+    <ClInclude Include="bushes.h">
+      <Filter>Models</Filter>
+    </ClInclude>
+    <ClInclude Include="gift.h">
+      <Filter>Models</Filter>
+    </ClInclude>
+    <ClInclude Include="plain.h">
+      <Filter>Models</Filter>
+    </ClInclude>
+    <ClInclude Include="suzi_flat.h">
+      <Filter>Models</Filter>
+    </ClInclude>
+    <ClInclude Include="suzi_smooth.h">
+      <Filter>Models</Filter>
+    </ClInclude>
+    <ClInclude Include="tree.h">
+      <Filter>Models</Filter>
+    </ClInclude>
+    <ClInclude Include="house.h">
+      <Filter>Models</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

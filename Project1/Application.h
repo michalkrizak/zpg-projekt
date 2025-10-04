@@ -1,15 +1,21 @@
 #pragma once
 #include "Scene.h"
+#pragma once
+#include "Scene.h"
 #include "Window.h"
+#include <vector>
+#include <memory>
 
 class Application {
 public:
     Application(int width, int height, const std::string& title);
     void run();
 
-    Scene& getScene();
+    void addScene(std::unique_ptr<Scene> scene);
+    void setActiveScene(size_t index);
 
 private:
     Window window;
-    Scene scene;
+    std::vector<std::unique_ptr<Scene>> scenes;
+    size_t activeSceneIndex = 0;
 };
