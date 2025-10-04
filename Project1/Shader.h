@@ -4,13 +4,11 @@
 
 class Shader {
 public:
-    Shader(const char* vertexSrc, const char* fragmentSrc);
+    Shader(GLenum type, const char* src);
     ~Shader();
 
-    void use() const;
-    GLuint getProgram() const;
+    GLuint getId() const;
 
 private:
-    GLuint program;
-    GLuint compileShader(GLenum type, const char* src);
+    GLuint shaderId;
 };
