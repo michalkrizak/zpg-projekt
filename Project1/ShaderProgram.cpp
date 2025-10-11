@@ -5,11 +5,15 @@
 
 ShaderProgram::ShaderProgram(const Shader& vs, const Shader& fs) {
     programId = glCreateProgram();
-    glAttachShader(programId, vs.getId());
-    glAttachShader(programId, fs.getId());
+
+    // Attach shadery bez zveřejňování ID (Shader volá glAttachShader s přístupem k programId)
+    vs.attachShaderToProgram(*this);
+    fs.attachShaderToProgram(*this);
+
     glLinkProgram(programId);
 
-    GLint success;
+	GLint success;
+
     glGetProgramiv(programId, GL_LINK_STATUS, &success);
     if (!success) {
         GLint logLen;
@@ -18,6 +22,10 @@ ShaderProgram::ShaderProgram(const Shader& vs, const Shader& fs) {
         glGetProgramInfoLog(programId, logLen, nullptr, log.data());
         throw std::runtime_error("Shader linking failed: " + std::string(log.data()));
     }
+
+    // Detach shadery po úspěšném linku (není nutné je držet připojené)
+    glDetachShader(programId, vs.shaderId);
+    glDetachShader(programId, fs.shaderId);
 }
 
 ShaderProgram::~ShaderProgram() {
@@ -26,10 +34,6 @@ ShaderProgram::~ShaderProgram() {
 
 void ShaderProgram::useProgram() const {
     glUseProgram(programId);
-}
-
-GLuint ShaderProgram::getId() const {
-    return programId;
 }
 
 void ShaderProgram::setUniform(const std::string& name, int value) const {
@@ -55,4 +59,17 @@ void ShaderProgram::setUniform(const std::string& name, const glm::vec4& value) 
 void ShaderProgram::setUniform(const std::string& name, const glm::mat4& value) const {
     int location = glGetUniformLocation(programId, name.c_str());
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
+}
+
+void ShaderProgram::onCameraChanged(const glm::mat4& view, const glm::mat4& projection) {
+    cachedView = view;
+    cachedProj = projection;
+    useProgram();
+    setUniform("view", cachedView);
+    setUniform("projection", cachedProj);
+}
+
+void ShaderProgram::setInitialViewProj(const glm::mat4& view, const glm::mat4& projection) {
+    cachedView = view;
+    cachedProj = projection;
 }

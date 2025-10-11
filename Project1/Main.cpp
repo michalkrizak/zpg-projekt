@@ -18,9 +18,45 @@
 #include "tree.h"
 #include "house.h"
 #include <iostream>
-
+#include "Camera.h"
 
 using namespace std;
+
+// Globální promìnné pro kameru
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f);
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+// Funkce pro zpracování vstupu
+void processInput(GLFWwindow* window) {
+    float currentFrame = glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard('W', deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard('S', deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard('A', deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard('D', deltaTime);
+}
+
+void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+    static bool firstMouse = true;
+    static float lastX = 400, lastY = 300;
+
+    if (firstMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xOffset = xpos - lastX;
+    float yOffset = lastY - ypos; // Obrácenì, protože y-coordinates jdou odspodu nahoru
+
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.processMouseMovement(xOffset, yOffset);
+}
 
 int main() {
     try {

@@ -5,6 +5,7 @@
 #include "Window.h"
 #include <vector>
 #include <memory>
+#include "Camera.h"
 
 class Application {
 public:
@@ -18,4 +19,5 @@ private:
     Window window;
     std::vector<std::unique_ptr<Scene>> scenes;
     size_t activeSceneIndex = 0;
+    std::shared_ptr<Camera> camera;
 };

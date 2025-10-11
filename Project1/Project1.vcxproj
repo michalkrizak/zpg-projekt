@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="bushes.cpp" />
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DrawableObject.cpp" />
     <ClCompile Include="gift.cpp" />
     <ClCompile Include="house.cpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="AbstractTransformation.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="bushes.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="DrawableObject.h" />
     <ClInclude Include="DynamicRotate.h" />
     <ClInclude Include="DynamicScale.h" />

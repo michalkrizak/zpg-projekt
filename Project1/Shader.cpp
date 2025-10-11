@@ -1,6 +1,7 @@
 #include "Shader.h"
 #include <stdexcept>
 #include <vector>
+#include "ShaderProgram.h"
 
 Shader::Shader(GLenum type, const char* src) {
     shaderId = glCreateShader(type);
@@ -22,6 +23,6 @@ Shader::~Shader() {
     glDeleteShader(shaderId);
 }
 
-GLuint Shader::getId() const {
-    return shaderId;
+void Shader::attachShaderToProgram(ShaderProgram& program) const {
+    glAttachShader(program.programId, shaderId);
 }

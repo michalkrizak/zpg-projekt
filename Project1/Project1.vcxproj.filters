@@ -72,6 +72,9 @@
     <ClCompile Include="house.cpp">
       <Filter>Models</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Window.h">
@@ -142,6 +145,9 @@
     </ClInclude>
     <ClInclude Include="house.h">
       <Filter>Models</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
