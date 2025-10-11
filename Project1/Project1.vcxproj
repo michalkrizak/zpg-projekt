@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="AbstractTransformation.h" />
     <ClInclude Include="Application.h" />
+  <ClInclude Include="CameraObserver.h" />
     <ClInclude Include="bushes.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DrawableObject.h" />

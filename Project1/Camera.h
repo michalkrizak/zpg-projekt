@@ -19,7 +19,6 @@ public:
 
     glm::vec3 getPosition() const;
 
-    // Observer management
     void addObserver(const std::shared_ptr<ICameraObserver>& obs);
     void removeObserver(const std::shared_ptr<ICameraObserver>& obs);
     void notifyObservers(float aspect);
@@ -34,7 +33,6 @@ private:
     float yaw;
     float pitch;
 
-    // Projection parameters
     float fov = 45.0f;
     float nearPlane = 0.1f;
     float farPlane = 100.0f;

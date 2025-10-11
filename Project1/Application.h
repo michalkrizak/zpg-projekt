@@ -15,6 +15,8 @@ public:
     void addScene(std::unique_ptr<Scene> scene);
     void setActiveScene(size_t index);
 
+    std::shared_ptr<Camera> getCamera() const { return camera; }
+
 private:
     Window window;
     std::vector<std::unique_ptr<Scene>> scenes;

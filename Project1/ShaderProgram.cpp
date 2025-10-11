@@ -6,7 +6,6 @@
 ShaderProgram::ShaderProgram(const Shader& vs, const Shader& fs) {
     programId = glCreateProgram();
 
-    // Attach shadery bez zveřejňování ID (Shader volá glAttachShader s přístupem k programId)
     vs.attachShaderToProgram(*this);
     fs.attachShaderToProgram(*this);
 
@@ -23,7 +22,6 @@ ShaderProgram::ShaderProgram(const Shader& vs, const Shader& fs) {
         throw std::runtime_error("Shader linking failed: " + std::string(log.data()));
     }
 
-    // Detach shadery po úspěšném linku (není nutné je držet připojené)
     glDetachShader(programId, vs.shaderId);
     glDetachShader(programId, fs.shaderId);
 }
@@ -38,27 +36,27 @@ void ShaderProgram::useProgram() const {
 
 void ShaderProgram::setUniform(const std::string& name, int value) const {
     int location = glGetUniformLocation(programId, name.c_str());
-    glUniform1i(location, value);
+    if (location != -1) glUniform1i(location, value);
 }
 
 void ShaderProgram::setUniform(const std::string& name, float value) const {
     int location = glGetUniformLocation(programId, name.c_str());
-    glUniform1f(location, value);
+    if (location != -1) glUniform1f(location, value);
 }
 
 void ShaderProgram::setUniform(const std::string& name, const glm::vec3& value) const {
     int location = glGetUniformLocation(programId, name.c_str());
-    glUniform3fv(location, 1, &value[0]);
+    if (location != -1) glUniform3fv(location, 1, &value[0]);
 }
 
 void ShaderProgram::setUniform(const std::string& name, const glm::vec4& value) const {
     int location = glGetUniformLocation(programId, name.c_str());
-    glUniform4fv(location, 1, &value[0]);
+    if (location != -1) glUniform4fv(location, 1, &value[0]);
 }
 
 void ShaderProgram::setUniform(const std::string& name, const glm::mat4& value) const {
     int location = glGetUniformLocation(programId, name.c_str());
-    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
+    if (location != -1) glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
 void ShaderProgram::onCameraChanged(const glm::mat4& view, const glm::mat4& projection) {

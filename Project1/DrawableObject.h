@@ -12,6 +12,8 @@ public:
 
     TransformAction& getTransform();
 
+    std::shared_ptr<ShaderProgram> getShaderProgram() const { return shaderProgram; }
+
 protected:
     std::unique_ptr<Model> model;
     std::shared_ptr<ShaderProgram> shaderProgram;
