@@ -150,14 +150,14 @@
     <ClCompile Include="sphere.cpp" />
     <ClCompile Include="suzi_flat.cpp" />
     <ClCompile Include="suzi_smooth.cpp" />
-    <ClCompile Include="TransformAction.cpp" />
+    <ClCompile Include="TransformComponent.cpp" />
     <ClCompile Include="tree.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AbstractTransformation.h" />
+    <ClInclude Include="TransformComponent.h" />
     <ClInclude Include="Application.h" />
-  <ClInclude Include="CameraObserver.h" />
+    <ClInclude Include="CameraObserver.h" />
     <ClInclude Include="bushes.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DrawableObject.h" />
@@ -176,7 +176,7 @@
     <ClInclude Include="sphere.h" />
     <ClInclude Include="suzi_flat.h" />
     <ClInclude Include="suzi_smooth.h" />
-    <ClInclude Include="TransformAction.h" />
+    <ClInclude Include="TransformComposite.h" />
     <ClInclude Include="Translate.h" />
     <ClInclude Include="tree.h" />
     <ClInclude Include="Window.h" />
