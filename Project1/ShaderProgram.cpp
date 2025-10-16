@@ -71,3 +71,9 @@ void ShaderProgram::setInitialViewProj(const glm::mat4& view, const glm::mat4& p
     cachedView = view;
     cachedProj = projection;
 }
+
+void ShaderProgram::onLightChanged(const glm::vec3& position, const glm::vec3& color) {
+    useProgram();
+    setUniform("lightPosition", position);
+    setUniform("lightColor", color);
+}

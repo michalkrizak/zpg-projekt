@@ -4,10 +4,11 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include "CameraObserver.h"
+#include "LightObserver.h"
 
 class Shader;  // P�ed deklarac� Shaderu
 
-class ShaderProgram : public ICameraObserver {
+class ShaderProgram : public ICameraObserver, public ILightObserver {
     friend class Shader;  // Shader m� p��stup k priv�tn�m �len�m
 
 public:
@@ -24,6 +25,9 @@ public:
 
     // ICameraObserver
     void onCameraChanged(const glm::mat4& view, const glm::mat4& projection) override;
+
+    // ILightObserver
+    void onLightChanged(const glm::vec3& position, const glm::vec3& color) override;
 
     // Helper: connect to a camera (registration will be done outside)
     void setInitialViewProj(const glm::mat4& view, const glm::mat4& projection);

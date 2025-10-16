@@ -10,6 +10,7 @@
 #include "tree.h"
 #include "bushes.h"
 #include "plain.h"
+#include "Light.h"
 
 using namespace std;
 
@@ -17,60 +18,14 @@ int main() {
     try {
     Application app(2000, 1000, "ZPG");
 
-        // Forest shaders with camera support (view/projection)
-        Shader vsForest(GL_VERTEX_SHADER,
-            "#version 330 core\n"
-            "layout(location=0) in vec3 position;\n"
-            "layout(location=1) in vec3 color;\n"
-            "out vec3 fragColor;\n"
-            "uniform mat4 model;\n"
-            "uniform mat4 view;\n"
-            "uniform mat4 projection;\n"
-            "void main(){\n"
-            "  fragColor = color;\n"
-            "  gl_Position = projection * view * model * vec4(position,1.0);\n"
-            "}");
-
-        Shader fsForest(GL_FRAGMENT_SHADER,
-            "#version 330 core\n"
-            "in vec3 fragColor;\n"
-            "out vec4 outColor;\n"
-            "void main(){ outColor = vec4(fragColor, 1.0); }");
-
+        // Forest shaders with camera support and basic point light
+        Shader vsForest = Shader::fromFile(GL_VERTEX_SHADER, "forest.vert");
+        Shader fsForest = Shader::fromFile(GL_FRAGMENT_SHADER, "forest.frag");
         auto programForest = make_shared<ShaderProgram>(vsForest, fsForest);
 
         // Ground shaders: compute world position and shade procedurally
-        Shader vsg(GL_VERTEX_SHADER,
-            "#version 330 core\n"
-            "layout(location=0) in vec3 position;\n"
-            "layout(location=1) in vec3 color;\n"
-            "out vec3 vWorldPos;\n"
-            "uniform mat4 model;\n"
-            "uniform mat4 view;\n"
-            "uniform mat4 projection;\n"
-            "void main(){\n"
-            "  vec4 wp = model * vec4(position,1.0);\n"
-            "  vWorldPos = wp.xyz;\n"
-            "  gl_Position = projection * view * wp;\n"
-            "}");
-
-        Shader fsg(GL_FRAGMENT_SHADER,
-            "#version 330 core\n"
-            "in vec3 vWorldPos;\n"
-            "out vec4 outColor;\n"
-            "float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }\n"
-            "void main(){\n"
-            "  // Checker-like tiling with subtle noise\n"
-            "  float tileSize = 2.0;\n"
-            "  vec2 t = floor(vWorldPos.xz / tileSize);\n"
-            "  float checker = mod(t.x + t.y, 2.0);\n"
-            "  vec3 colA = vec3(0.18, 0.35, 0.12);\n"
-            "  vec3 colB = vec3(0.15, 0.32, 0.10);\n"
-            "  float n = hash(t) * 0.08;\n"
-            "  vec3 c = mix(colA, colB, checker) + n;\n"
-            "  outColor = vec4(c,1.0);\n"
-            "}");
-
+        Shader vsg = Shader::fromFile(GL_VERTEX_SHADER, "ground.vert");
+        Shader fsg = Shader::fromFile(GL_FRAGMENT_SHADER, "ground.frag");
         auto programGround = make_shared<ShaderProgram>(vsg, fsg);
 
     // Build a single scene with 50 trees and 50 bushes
@@ -119,6 +74,12 @@ int main() {
             obj->getTransform().addTransformation(move(t));
             forest->addObject(move(obj));
         }
+
+        // Create a point light and register ShaderPrograms as observers
+        auto light = std::make_shared<Light>(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.9f));
+        light->addObserver(programForest);
+        light->addObserver(programGround);
+        light->notifyObservers(); // Initial notification
 
         // Register the scene and run
         app.addScene(std::move(forest));
