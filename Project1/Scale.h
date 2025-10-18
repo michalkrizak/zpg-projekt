@@ -1,8 +1,8 @@
 #pragma once
-#include "AbstractTransformation.h"
+#include "TransformComponent.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-class Scale : public AbstractTransformation {
+class Scale : public TransformComponent {
 public:
     Scale(float sx, float sy, float sz)
         : sx(sx), sy(sy), sz(sz) {}

@@ -1,7 +1,7 @@
 #pragma once
-#include "AbstractTransformation.h"
+#include "TransformComponent.h"
 
-class Translate : public AbstractTransformation {
+class Translate : public TransformComponent {
 public:
     Translate(float x, float y, float z) : x(x), y(y), z(z) {}
     glm::mat4 getMatrix() const override {

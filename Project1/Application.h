@@ -17,6 +17,8 @@ public:
 
     std::shared_ptr<Camera> getCamera() const { return camera; }
 
+    Window& getWindow() { return window; }
+
 private:
     Window window;
     std::vector<std::unique_ptr<Scene>> scenes;

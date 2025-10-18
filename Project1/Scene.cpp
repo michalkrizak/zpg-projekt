@@ -11,6 +11,12 @@ void Scene::drawAll() const {
     }
 }
 
+void Scene::drawAll(const glm::vec3& viewPos) const {
+    for (const auto& obj : objects) {
+        obj->draw(viewPos);
+    }
+}
+
 std::vector<std::shared_ptr<ShaderProgram>> Scene::getShaderPrograms() const {
     std::vector<std::shared_ptr<ShaderProgram>> result;
     std::unordered_set<ShaderProgram*> seen;

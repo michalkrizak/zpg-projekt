@@ -141,6 +141,7 @@
     <ClCompile Include="DrawableObject.cpp" />
     <ClCompile Include="gift.cpp" />
     <ClCompile Include="house.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="plain.cpp" />
@@ -155,6 +156,8 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="LightObserver.h" />
     <ClInclude Include="TransformComponent.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="CameraObserver.h" />
@@ -180,6 +183,13 @@
     <ClInclude Include="Translate.h" />
     <ClInclude Include="tree.h" />
     <ClInclude Include="Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="blinn.frag" />
+    <None Include="common.vert" />
+    <None Include="constant.frag" />
+    <None Include="phong.frag" />
+    <None Include="universal.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

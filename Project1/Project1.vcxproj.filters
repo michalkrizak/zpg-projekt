@@ -19,6 +19,9 @@
     <Filter Include="Models">
       <UniqueIdentifier>{1b670739-d507-4c5c-a776-f36377f9f4cf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{2ae8c6c1-6c72-4952-8316-69cfa10860f7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Window.cpp">
@@ -73,6 +76,9 @@
       <Filter>Models</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -152,5 +158,28 @@
     <ClInclude Include="CameraObserver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LightObserver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="phong.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="constant.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="common.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="blinn.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="universal.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

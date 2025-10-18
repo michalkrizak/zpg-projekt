@@ -1,8 +1,8 @@
 #pragma once
-#include "AbstractTransformation.h"
+#include "TransformComponent.h"
 #include <GLFW/glfw3.h>
 
-class DynamicRotate : public AbstractTransformation {
+class DynamicRotate : public TransformComponent {
 public:
     DynamicRotate(float angleSpeed, float x, float y, float z)
         : angleSpeed(angleSpeed), axis(x, y, z) {}

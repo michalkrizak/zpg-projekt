@@ -112,7 +112,11 @@ void Application::run() {
     if (auto cam = getCamera()) cam->notifyObservers(aspect);
 
         if (!scenes.empty() && activeSceneIndex < scenes.size()) {
-            scenes[activeSceneIndex]->drawAll();
+            if (camera) {
+                scenes[activeSceneIndex]->drawAll(camera->getPosition());
+            } else {
+                scenes[activeSceneIndex]->drawAll();
+            }
         }
 
         window.swapBuffers();

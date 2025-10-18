@@ -4,6 +4,7 @@ C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\Ca
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\DrawableObject.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\DrawableObject.obj
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\gift.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\gift.obj
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\house.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\house.obj
+C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\Light.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\Light.obj
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\Main.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\Main.obj
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\Model.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\Model.obj
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\plain.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\plain.obj
@@ -13,6 +14,6 @@ C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\Sh
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\sphere.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\sphere.obj
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\suzi_flat.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\suzi_flat.obj
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\suzi_smooth.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\suzi_smooth.obj
-C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\TransformAction.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\TransformAction.obj
+C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\TransformComponent.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\TransformComponent.obj
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\tree.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\tree.obj
 C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\Window.cpp;C:\Users\micha\michal.krizak\skola\5_semestr\zpg\projekt\zpg-projekt\Project1\x64\Debug\Window.obj

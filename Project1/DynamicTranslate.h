@@ -1,8 +1,8 @@
 #pragma once
-#include "AbstractTransformation.h"
+#include "TransformComponent.h"
 #include <GLFW/glfw3.h>
 
-class DynamicTranslate : public AbstractTransformation {
+class DynamicTranslate : public TransformComponent {
 public:
     DynamicTranslate(float ax, float ay, float az, float speed = 1.0f)
         : ax(ax), ay(ay), az(az), speed(speed) {}
