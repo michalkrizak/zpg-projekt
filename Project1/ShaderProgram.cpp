@@ -73,7 +73,40 @@ void ShaderProgram::setInitialViewProj(const glm::mat4& view, const glm::mat4& p
 }
 
 void ShaderProgram::onLightChanged(const glm::vec3& position, const glm::vec3& color) {
+    // Add or update light
+    bool found = false;
+    for (auto& light : lights) {
+        if (glm::all(glm::epsilonEqual(light.position, position, 0.001f))) {
+            light.color = color;
+            found = true;
+            break;
+        }
+    }
+    
+    if (!found && lights.size() < MAX_LIGHTS) {
+        lights.push_back({position, color});
+    }
+    
+    updateLightsUniforms();
+}
+
+void ShaderProgram::updateLightsUniforms() {
     useProgram();
-    setUniform("lightPosition", position);
-    setUniform("lightColor", color);
+    
+    // Set number of lights
+    setUniform("numLights", static_cast<int>(lights.size()));
+    
+    // Set each light's data
+    for (size_t i = 0; i < lights.size() && i < MAX_LIGHTS; ++i) {
+        std::string posName = "lights[" + std::to_string(i) + "].position";
+        std::string colName = "lights[" + std::to_string(i) + "].color";
+        
+        setUniform(posName, lights[i].position);
+        setUniform(colName, lights[i].color);
+    }
+}
+
+void ShaderProgram::clearLights() {
+    lights.clear();
+    updateLightsUniforms();
 }

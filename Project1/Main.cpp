@@ -47,7 +47,7 @@ int main() {
             forest->addObject(move(ground));
         }
 
-        // 50 trees
+        // 150 trees
         for (int i = 0; i < 150; ++i) {
             auto m = make_unique<Model>(tree, treeDataSize, 6);
             auto obj = make_unique<DrawableObject>(move(m), programForest);
@@ -61,7 +61,7 @@ int main() {
             forest->addObject(move(obj));
         }
 
-        // 50 bushes
+        // 150 bushes
         for (int i = 0; i < 150; ++i) {
             auto m = make_unique<Model>(bushes, bushesDataSize, 6);
             auto obj = make_unique<DrawableObject>(move(m), programForest);
@@ -76,8 +76,8 @@ int main() {
         }
 
         auto light = std::make_shared<Light>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.9f));
-        light->addObserver(programForest);
-        light->addObserver(programGround);
+        light->addObserver(std::static_pointer_cast<ILightObserver>(programForest));
+        light->addObserver(std::static_pointer_cast<ILightObserver>(programGround));
         light->notifyObservers();
 
         app.addScene(std::move(forest));
@@ -136,14 +136,23 @@ int main() {
         obj4->setColor(glm::vec3(0.9f, 0.3f, 0.3f));
         sphereScene->addObject(move(obj4));
 
-        light->addObserver(programUniversal);
+        light->addObserver(std::static_pointer_cast<ILightObserver>(programUniversal));
         light->notifyObservers();
+        
+        // Add additional lights to sphere scene for demonstration
+        auto light2 = std::make_shared<Light>(glm::vec3(3.0f, 2.0f, 0.0f), glm::vec3(1.0f, 0.3f, 0.3f)); // Red light
+        light2->addObserver(std::static_pointer_cast<ILightObserver>(programUniversal));
+        light2->notifyObservers();
+        
+        auto light3 = std::make_shared<Light>(glm::vec3(-3.0f, 2.0f, 0.0f), glm::vec3(0.3f, 1.0f, 0.3f)); // Green light
+        light3->addObserver(std::static_pointer_cast<ILightObserver>(programUniversal));
+        light3->notifyObservers();
 
         if (app.getCamera()) {
             int fbWidth=0, fbHeight=0; glfwGetFramebufferSize(app.getWindow().getGLFWwindow(), &fbWidth, &fbHeight);
             float aspect = fbHeight>0? static_cast<float>(fbWidth)/fbHeight : 1.0f;
             programUniversal->setInitialViewProj(app.getCamera()->getViewMatrix(), app.getCamera()->getProjectionMatrix(aspect));
-            app.getCamera()->addObserver(programUniversal);
+            app.getCamera()->addObserver(std::static_pointer_cast<ICameraObserver>(programUniversal));
         }
 
         app.addScene(std::move(sphereScene));
@@ -168,7 +177,7 @@ int main() {
             int fbWidth=0, fbHeight=0; glfwGetFramebufferSize(app.getWindow().getGLFWwindow(), &fbWidth, &fbHeight);
             float aspect = fbHeight>0? static_cast<float>(fbWidth)/fbHeight : 1.0f;
             programTri->setInitialViewProj(app.getCamera()->getViewMatrix(), app.getCamera()->getProjectionMatrix(aspect));
-            app.getCamera()->addObserver(programTri);
+            app.getCamera()->addObserver(std::static_pointer_cast<ICameraObserver>(programTri));
         }
 
         app.addScene(std::move(triangleScene));
@@ -231,14 +240,14 @@ int main() {
         }
 
         // Register planet program with light and camera
-        light->addObserver(programPlanet);
+        light->addObserver(std::static_pointer_cast<ILightObserver>(programPlanet));
         light->notifyObservers();
         if (app.getCamera()) {
             int fbWidth=0, fbHeight=0; glfwGetFramebufferSize(app.getWindow().getGLFWwindow(), &fbWidth, &fbHeight);
             float aspect = fbHeight>0? static_cast<float>(fbWidth)/fbHeight : 1.0f;
             for (auto& sp : {programSun, programPlanet}) {
                 sp->setInitialViewProj(app.getCamera()->getViewMatrix(), app.getCamera()->getProjectionMatrix(aspect));
-                app.getCamera()->addObserver(sp);
+                app.getCamera()->addObserver(std::static_pointer_cast<ICameraObserver>(sp));
             }
         }
 

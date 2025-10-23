@@ -3,6 +3,7 @@
 #include "Shader.h"
 #include <glm/glm.hpp>
 #include <memory>
+#include <vector>
 #include "CameraObserver.h"
 #include "LightObserver.h"
 
@@ -31,8 +32,21 @@ public:
 
     // Helper: connect to a camera (registration will be done outside)
     void setInitialViewProj(const glm::mat4& view, const glm::mat4& projection);
+    
+    // Multiple lights support
+    void updateLightsUniforms();
+    void clearLights();
+    
 private:
+    static constexpr int MAX_LIGHTS = 4;
+    
+    struct LightData {
+        glm::vec3 position;
+        glm::vec3 color;
+    };
+    
     GLuint programId;
     glm::mat4 cachedView{1.0f};
     glm::mat4 cachedProj{1.0f};
+    std::vector<LightData> lights;
 };
