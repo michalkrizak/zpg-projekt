@@ -148,14 +148,14 @@ void Application::run() {
 
 void Application::createForestScene() {
     // Forest shaders
-    Shader vsForest = Shader::fromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader fsForest = Shader::fromFile(GL_FRAGMENT_SHADER, "phong.frag");
-    auto programForest = std::make_shared<ShaderProgram>(vsForest, fsForest);
+    Shader* vsForest = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsForest = Shader::createFromFile(GL_FRAGMENT_SHADER, "phong.frag");
+    auto programForest = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsForest, fsForest});
 
     // Ground shaders
-    Shader vsg = Shader::fromFile(GL_VERTEX_SHADER, "ground.vert");
-    Shader fsg = Shader::fromFile(GL_FRAGMENT_SHADER, "ground.frag");
-    auto programGround = std::make_shared<ShaderProgram>(vsg, fsg);
+    Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "ground.vert");
+    Shader* fsg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
+    auto programGround = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsg, fsg});
 
     auto forest = std::make_unique<Scene>();
 
@@ -214,9 +214,9 @@ void Application::createSphereScene() {
     float sphereDistance = 2.0f;
     float sphereScale = 1.0f;
 
-    Shader vsCommon = Shader::fromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader fsUniversal = Shader::fromFile(GL_FRAGMENT_SHADER, "universal.frag");
-    auto programUniversal = std::make_shared<ShaderProgram>(vsCommon, fsUniversal);
+    Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsUniversal = Shader::createFromFile(GL_FRAGMENT_SHADER, "universal.frag");
+    auto programUniversal = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsUniversal});
 
     // Sphere 1: Constant
     auto m1 = std::make_unique<Model>(sphere, sphereDataSize, 6);
@@ -293,9 +293,9 @@ void Application::createTriangleScene() {
          0.0f,  0.5f, 0.0f
     };
     auto triModel = std::make_unique<Model>(triVerts, sizeof(triVerts), 3);
-    Shader vsTri = Shader::fromFile(GL_VERTEX_SHADER, "tri.vert");
-    Shader fsTri = Shader::fromFile(GL_FRAGMENT_SHADER, "tri.frag");
-    auto programTri = std::make_shared<ShaderProgram>(vsTri, fsTri);
+    Shader* vsTri = Shader::createFromFile(GL_VERTEX_SHADER, "tri.vert");
+    Shader* fsTri = Shader::createFromFile(GL_FRAGMENT_SHADER, "tri.frag");
+    auto programTri = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsTri, fsTri});
     auto triObj = std::make_unique<DrawableObject>(std::move(triModel), programTri);
     triangleScene->addObject(std::move(triObj));
 
@@ -313,11 +313,11 @@ void Application::createTriangleScene() {
 void Application::createSolarScene() {
     auto solarScene = std::make_unique<Scene>();
 
-    Shader vsSolar = Shader::fromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader fsSun = Shader::fromFile(GL_FRAGMENT_SHADER, "constant.frag");
-    Shader fsPlanet = Shader::fromFile(GL_FRAGMENT_SHADER, "color_phong.frag");
-    auto programSun = std::make_shared<ShaderProgram>(vsSolar, fsSun);
-    auto programPlanet = std::make_shared<ShaderProgram>(vsSolar, fsPlanet);
+    Shader* vsSolar = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsSun = Shader::createFromFile(GL_FRAGMENT_SHADER, "constant.frag");
+    Shader* fsPlanet = Shader::createFromFile(GL_FRAGMENT_SHADER, "color_phong.frag");
+    auto programSun = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSolar, fsSun});
+    auto programPlanet = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSolar, fsPlanet});
 
     // SUN
     {

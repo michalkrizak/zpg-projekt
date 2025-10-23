@@ -3,16 +3,17 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 
-ShaderProgram::ShaderProgram(const Shader& vs, const Shader& fs) {
+ShaderProgram::ShaderProgram(const std::vector<Shader*>& shaders) : shaders(shaders) {
     programId = glCreateProgram();
 
-    vs.attachShaderToProgram(*this);
-    fs.attachShaderToProgram(*this);
+    // Attach all shaders
+    for (const auto& shader : shaders) {
+        shader->attachShader(programId);
+    }
 
     glLinkProgram(programId);
 
-	GLint success;
-
+    GLint success;
     glGetProgramiv(programId, GL_LINK_STATUS, &success);
     if (!success) {
         GLint logLen;
@@ -22,8 +23,10 @@ ShaderProgram::ShaderProgram(const Shader& vs, const Shader& fs) {
         throw std::runtime_error("Shader linking failed: " + std::string(log.data()));
     }
 
-    glDetachShader(programId, vs.shaderId);
-    glDetachShader(programId, fs.shaderId);
+    // Detach all shaders after linking
+    for (const auto& shader : shaders) {
+        shader->detachShader(programId);
+    }
 }
 
 ShaderProgram::~ShaderProgram() {

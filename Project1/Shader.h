@@ -2,26 +2,26 @@
 #include <GL/glew.h>
 #include <string>
 
-class ShaderProgram; // forward declaration
-
-
 class Shader {
 public:
-    // Constructor for inline shader code (backward compatibility)
-    Shader(GLenum type, const char* src);
+    // Factory methods for creating shaders
+    static Shader* createFromSource(GLenum type, const char* source);
+    static Shader* createFromFile(GLenum type, const char* filename);
     
-    // Constructor for loading shader from file
-    static Shader fromFile(GLenum type, const char* filePath);
+    // Explicit constructor with shader ID
+    explicit Shader(GLuint id);
     
     ~Shader();
 
-    void attachShaderToProgram(ShaderProgram& program) const;
+    // Attach this shader to a program by programID
+    void attachShader(GLuint programID) const;
+    // Detach this shader from a program by programID
+    void detachShader(GLuint programID) const;
 
 private:
-    friend class ShaderProgram; // allow ShaderProgram to access shaderId for optional detach
     GLuint shaderId;
     
-    // Private default constructor for factory method
+    // Private default constructor
     Shader();
     
     // Core shader creation method

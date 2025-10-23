@@ -4,19 +4,41 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "ShaderProgram.h"
 
 Shader::Shader() : shaderId(0) {
 }
 
-Shader::Shader(GLenum type, const char* src) {
-    createShader(type, src);
+Shader::Shader(GLuint id) : shaderId(id) {
 }
 
-Shader Shader::fromFile(GLenum type, const char* filePath) {
-    Shader shader;
-    shader.createShaderFromFile(type, filePath);
-    return shader;
+Shader* Shader::createFromSource(GLenum type, const char* source) {
+    GLuint id = glCreateShader(type);
+    glShaderSource(id, 1, &source, NULL);
+    glCompileShader(id);
+    
+    // Check compilation status
+    GLint success;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        GLint logLen;
+        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &logLen);
+        std::vector<char> log(logLen);
+        glGetShaderInfoLog(id, logLen, nullptr, log.data());
+        glDeleteShader(id);
+        throw std::runtime_error("Shader compilation failed: " + std::string(log.data()));
+    }
+    
+    return new Shader(id);
+}
+
+Shader* Shader::createFromFile(GLenum type, const char* filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Unable to open file: " + std::string(filename));
+    }
+    std::string source((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    
+    return createFromSource(type, source.c_str());
 }
 
 void Shader::createShader(GLenum shaderType, const char* shaderCode) {
@@ -57,6 +79,10 @@ Shader::~Shader() {
     }
 }
 
-void Shader::attachShaderToProgram(ShaderProgram& program) const {
-    glAttachShader(program.programId, shaderId);
+void Shader::attachShader(GLuint programID) const {
+    glAttachShader(programID, shaderId);
+}
+
+void Shader::detachShader(GLuint programID) const {
+    glDetachShader(programID, shaderId);
 }

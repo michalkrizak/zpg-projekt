@@ -7,13 +7,9 @@
 #include "CameraObserver.h"
 #include "LightObserver.h"
 
-class Shader;  // P�ed deklarac� Shaderu
-
 class ShaderProgram : public ICameraObserver, public ILightObserver {
-    friend class Shader;  // Shader m� p��stup k priv�tn�m �len�m
-
 public:
-    ShaderProgram(const Shader& vs, const Shader& fs);
+    ShaderProgram(const std::vector<Shader*>& shaders);
     ~ShaderProgram();
 
     void useProgram() const;
@@ -49,4 +45,5 @@ private:
     glm::mat4 cachedView{1.0f};
     glm::mat4 cachedProj{1.0f};
     std::vector<LightData> lights;
+    std::vector<Shader*> shaders;
 };
