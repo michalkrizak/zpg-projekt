@@ -10,6 +10,8 @@
 #include "Scale.h"
 #include "DynamicRotate.h"
 #include "Light.h"
+#include "DynamicLight.h"
+#include "Firefly.h"
 #include "tree.h"
 #include "bushes.h"
 #include "plain.h"
@@ -58,6 +60,40 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
         case GLFW_KEY_2: g_app->setActiveScene(1); break;
         case GLFW_KEY_3: g_app->setActiveScene(2); break;
         case GLFW_KEY_4: g_app->setActiveScene(3); break;
+        case GLFW_KEY_5: g_app->setActiveScene(4); break; // backface test scene
+        case GLFW_KEY_6: g_app->setActiveScene(5); break; // FOV test scene
+        
+        // FOV control - Q, E, R
+        case GLFW_KEY_Q: 
+            if (auto cam = g_app->getCamera()) {
+                cam->setFOV(45.0f);
+                int fbWidth = 0, fbHeight = 0;
+                glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+                float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+                cam->notifyObservers(aspect);
+                printf("FOV set to 45 degrees\n");
+            }
+            break;
+        case GLFW_KEY_E:
+            if (auto cam = g_app->getCamera()) {
+                cam->setFOV(90.0f);
+                int fbWidth = 0, fbHeight = 0;
+                glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+                float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+                cam->notifyObservers(aspect);
+                printf("FOV set to 90 degrees\n");
+            }
+            break;
+        case GLFW_KEY_R:
+            if (auto cam = g_app->getCamera()) {
+                cam->setFOV(130.0f);
+                int fbWidth = 0, fbHeight = 0;
+                glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+                float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+                cam->notifyObservers(aspect);
+                printf("FOV set to 130 degrees\n");
+            }
+            break;
         }
     }
 }
@@ -76,8 +112,16 @@ Application::Application(int width, int height, const std::string& title)
     glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
     glViewport(0, 0, fbWidth, fbHeight);
 
-    // Create main light for all scenes
-    mainLight = std::make_shared<Light>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.9f));
+    // Create main light for all scenes - positioned high above, moonlight-like intensity
+    /*mainLight = std::make_shared<Light>(
+        glm::vec3(0.0f, 30.0f, 0.0f),
+        glm::vec3(0.3f, 0.3f, 0.28f)
+    );*/
+
+    mainLight = std::make_shared<Light>(
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(1.0f, 1.0f, 1.08f)
+    );
 }
 
 void Application::initialize() {
@@ -85,6 +129,8 @@ void Application::initialize() {
     createSphereScene();
     createTriangleScene();
     createSolarScene();
+    createBackfaceTestScene();
+    createFOVTestScene();
 }
 
 void Application::addScene(std::unique_ptr<Scene> scene) {
@@ -103,7 +149,7 @@ void Application::addScene(std::unique_ptr<Scene> scene) {
 void Application::setActiveScene(size_t index) {
     if (index < scenes.size()) {
         activeSceneIndex = index;
-        std::cout << "P�epnuto na sc�nu " << index << std::endl;
+        std::cout << "Prepnuto na scenu " << index << std::endl;
         if (camera) {
             int fbWidth=0, fbHeight=0; glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
             float aspect = fbHeight>0? static_cast<float>(fbWidth)/fbHeight : 1.0f;
@@ -127,11 +173,14 @@ void Application::run() {
 
         // WSAD input
         processWSAD(window.getGLFWwindow(), camera, delta);
+        
+        // Update dynamic lights (fireflies)
+        updateDynamicLights();
 
         int fbWidth = 0, fbHeight = 0;
         glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
         float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / static_cast<float>(fbHeight) : 1.0f;
-    if (auto cam = getCamera()) cam->notifyObservers(aspect);
+        if (auto cam = getCamera()) cam->notifyObservers(aspect);
 
         if (!scenes.empty() && activeSceneIndex < scenes.size()) {
             if (camera) {
@@ -206,6 +255,61 @@ void Application::createForestScene() {
     mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programGround));
     mainLight->notifyObservers();
 
+    // Create fireflies (světlušky) - glowing spheres with dynamic lights
+    Shader* vsEmissive = Shader::createFromFile(GL_VERTEX_SHADER, "emissive.vert");
+    Shader* fsEmissive = Shader::createFromFile(GL_FRAGMENT_SHADER, "emissive.frag");
+    auto programEmissive = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsEmissive, fsEmissive});
+    
+    std::uniform_real_distribution<float> distFireflyPos(-12.0f, 12.0f);
+    std::uniform_real_distribution<float> distFireflySpeed(0.3f, 1.2f);
+    std::uniform_real_distribution<float> distFireflyPhase(0.0f, 6.28f);
+    std::uniform_real_distribution<float> distFireflyRadius(1.5f, 3.5f);
+    std::uniform_real_distribution<float> distFireflyHeight(0.05f, 0.35f);
+    
+    // Různé barvy pro světlušky (zelená, žlutá, teplá bílá) - vysoká intenzita pro viditelné světlo
+    std::vector<glm::vec3> fireflyColors = {
+       // glm::vec3(0.8f, 2.0f, 0.5f),  // Jasně zelená
+        glm::vec3(2.0f, 1.8f, 0.5f),  // Žlutá
+       // glm::vec3(1.5f, 2.0f, 0.8f),  // Světle zelená
+       // glm::vec3(2.0f, 1.5f, 0.6f),  // Teplá žlutá
+        //glm::vec3(0.6f, 1.8f, 1.0f),  // Tyrkysová
+       // glm::vec3(1.8f, 1.0f, 0.4f)   // Oranžová
+    };
+    
+    // Vytvoříme 12 světlušek jako DrawableObject + DynamicLight
+    for (int i = 0; i < 12; ++i) {
+        float x = distFireflyPos(rng);
+        float z = distFireflyPos(rng);
+        float y = distFireflyHeight(rng); // Lower, randomized flight heights
+        float speed = distFireflySpeed(rng);
+        float phase = distFireflyPhase(rng);
+        float radius = distFireflyRadius(rng);
+        
+        // Create Firefly object (derived from DrawableObject) and add to scene
+        const float fireflyScale = 0.02f;
+        auto fireflyModel = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        auto fireflyObj = std::make_unique<Firefly>(
+            std::move(fireflyModel),
+            programEmissive,
+            glm::vec3(x, y, z),
+            fireflyColors[i % fireflyColors.size()],
+            radius,
+            speed,
+            phase,
+            fireflyScale,
+            0.15f
+        );
+        Firefly* fireflyPtr = fireflyObj.get();
+        forest->addObject(std::move(fireflyObj));
+        
+    fireflyPtr->addObserver(std::static_pointer_cast<ILightObserver>(programForest));
+    fireflyPtr->addObserver(std::static_pointer_cast<ILightObserver>(programGround));
+    fireflyPtr->notifyObservers();
+        
+    // Store non-owning pointer for per-frame updates
+    fireflies.push_back(fireflyPtr);
+    }
+
     addScene(std::move(forest));
 }
 
@@ -225,7 +329,7 @@ void Application::createSphereScene() {
     t1->addTransformation(std::make_unique<Translate>(sphereDistance, 0.0f, 0.0f));
     t1->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
     obj1->getTransform().addTransformation(std::move(t1));
-    obj1->setModelType(0);
+    obj1->setModelType(2);
     obj1->setColor(glm::vec3(1.0f, 0.8f, 0.2f));
     sphereScene->addObject(std::move(obj1));
 
@@ -236,7 +340,7 @@ void Application::createSphereScene() {
     t2->addTransformation(std::make_unique<Translate>(-sphereDistance, 0.0f, 0.0f));
     t2->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
     obj2->getTransform().addTransformation(std::move(t2));
-    obj2->setModelType(1);
+    obj2->setModelType(2);
     obj2->setColor(glm::vec3(0.2f, 0.8f, 0.2f));
     sphereScene->addObject(std::move(obj2));
 
@@ -258,7 +362,7 @@ void Application::createSphereScene() {
     t4->addTransformation(std::make_unique<Translate>(0.0f, -sphereDistance, 0.0f));
     t4->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
     obj4->getTransform().addTransformation(std::move(t4));
-    obj4->setModelType(3);
+    obj4->setModelType(2);
     obj4->setColor(glm::vec3(0.9f, 0.3f, 0.3f));
     sphereScene->addObject(std::move(obj4));
 
@@ -310,6 +414,55 @@ void Application::createTriangleScene() {
     addScene(std::move(triangleScene));
 }
 
+void Application::createBackfaceTestScene() {
+    auto testScene = std::make_unique<Scene>();
+
+    float sphereDistance = 2.0f;
+    float sphereScale = 1.0f;
+
+    Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsUniversal = Shader::createFromFile(GL_FRAGMENT_SHADER, "universal.frag");
+    Shader* fsWrong = Shader::createFromFile(GL_FRAGMENT_SHADER, "phong_wrong_backside.frag");
+    auto programUniversal = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsUniversal});
+    auto programWrong = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsWrong});
+
+    // Sphere 1: Phong CORRECT (right side)
+    auto m1 = std::make_unique<Model>(sphere, sphereDataSize, 6);
+    auto obj1 = std::make_unique<DrawableObject>(std::move(m1), programUniversal);
+    auto t1 = std::make_unique<TransformComposite>();
+    t1->addTransformation(std::make_unique<Translate>(sphereDistance, 0.0f, 0.0f));
+    t1->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
+    obj1->getTransform().addTransformation(std::move(t1));
+    obj1->setModelType(2);
+    obj1->setColor(glm::vec3(0.8f, 0.8f, 0.8f)); // Neutral gray
+    testScene->addObject(std::move(obj1));
+
+    // Sphere 2: WRONG (left side) - should be incorrectly lit on camera-facing side due to abs(dot)
+    auto m2 = std::make_unique<Model>(sphere, sphereDataSize, 6);
+    auto obj2 = std::make_unique<DrawableObject>(std::move(m2), programWrong);
+    auto t2 = std::make_unique<TransformComposite>();
+    t2->addTransformation(std::make_unique<Translate>(-sphereDistance, 0.0f, 0.0f));
+    t2->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
+    obj2->getTransform().addTransformation(std::move(t2));
+    obj2->setColor(glm::vec3(0.8f, 0.8f, 0.8f)); // Same neutral gray
+    testScene->addObject(std::move(obj2));
+
+    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programUniversal));
+    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programWrong));
+    mainLight->notifyObservers();
+
+    if (camera) {
+        int fbWidth = 0, fbHeight = 0;
+        glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
+        float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+        programUniversal->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        programWrong->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programUniversal));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programWrong));
+    }
+
+    addScene(std::move(testScene));
+}
 void Application::createSolarScene() {
     auto solarScene = std::make_unique<Scene>();
 
@@ -381,4 +534,83 @@ void Application::createSolarScene() {
     }
 
     addScene(std::move(solarScene));
+}
+
+void Application::createFOVTestScene() {
+    auto fovScene = std::make_unique<Scene>();
+
+    Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsUniversal = Shader::createFromFile(GL_FRAGMENT_SHADER, "universal.frag");
+    auto program = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsUniversal});
+
+    // Create a grid of spheres to visualize FOV effect
+    float gridSize = 3.0f;
+    float spacing = 2.0f;
+    int rows = 5;
+    int cols = 5;
+
+    for (int row = 0; row < rows; ++row) {
+        for (int col = 0; col < cols; ++col) {
+            auto m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+            auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+            
+            float x = (col - cols / 2.0f) * spacing;
+            float y = (row - rows / 2.0f) * spacing;
+            float z = -5.0f;
+
+            auto t = std::make_unique<TransformComposite>();
+            t->addTransformation(std::make_unique<Translate>(x, y, z));
+            t->addTransformation(std::make_unique<Scale>(0.4f, 0.4f, 0.4f));
+            obj->getTransform().addTransformation(std::move(t));
+            obj->setModelType(2); // Phong
+            
+            // Color gradient from red to blue
+            float colorFactor = static_cast<float>(row * cols + col) / (rows * cols);
+            obj->setColor(glm::vec3(1.0f - colorFactor, 0.3f, colorFactor));
+            
+            fovScene->addObject(std::move(obj));
+        }
+    }
+
+    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(program));
+    mainLight->notifyObservers();
+
+    if (camera) {
+        int fbWidth = 0, fbHeight = 0;
+        glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
+        float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+        program->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(program));
+    }
+
+    addScene(std::move(fovScene));
+}
+
+void Application::updateDynamicLights() {
+    // Update positions
+    for (auto& light : dynamicLights) {
+        light->update();
+    }
+    for (auto& firefly : fireflies) {
+        firefly->update();
+    }
+
+    // Rebuild light uniforms each frame so moving lights update correctly
+    if (!scenes.empty() && activeSceneIndex < scenes.size()) {
+        auto programs = scenes[activeSceneIndex]->getShaderPrograms();
+        for (auto& sp : programs) {
+            sp->clearLights();
+        }
+
+        if (mainLight) {
+            mainLight->notifyObservers();
+        }
+        // Fireflies first to prioritize their visibility if MAX_LIGHTS is limited
+        for (auto& f : fireflies) {
+            f->notifyObservers();
+        }
+        for (auto& l : dynamicLights) {
+            l->notifyObservers();
+        }
+    }
 }

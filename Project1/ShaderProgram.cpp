@@ -57,6 +57,11 @@ void ShaderProgram::setUniform(const std::string& name, const glm::vec4& value) 
     if (location != -1) glUniform4fv(location, 1, &value[0]);
 }
 
+void ShaderProgram::setUniform(const std::string& name, const glm::mat3& value) const {
+    int location = glGetUniformLocation(programId, name.c_str());
+    if (location != -1) glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(value));
+}
+
 void ShaderProgram::setUniform(const std::string& name, const glm::mat4& value) const {
     int location = glGetUniformLocation(programId, name.c_str());
     if (location != -1) glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
@@ -106,6 +111,12 @@ void ShaderProgram::updateLightsUniforms() {
         
         setUniform(posName, lights[i].position);
         setUniform(colName, lights[i].color);
+    }
+
+    // Also support legacy single-light shaders (e.g., ground.frag)
+    if (!lights.empty()) {
+        setUniform("lightPosition", lights[0].position);
+        setUniform("lightColor", lights[0].color);
     }
 }
 

@@ -156,6 +156,8 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DynamicLight.h" />
+    <ClInclude Include="Firefly.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="LightObserver.h" />
     <ClInclude Include="TransformComponent.h" />

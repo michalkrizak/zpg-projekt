@@ -51,6 +51,14 @@ glm::vec3 Camera::getPosition() const {
     return position;
 }
 
+float Camera::getFOV() const {
+    return fov;
+}
+
+void Camera::setFOV(float newFOV) {
+    fov = newFOV;
+}
+
 void Camera::addObserver(const std::shared_ptr<ICameraObserver>& obs) {
     observers.emplace_back(obs);
 }

@@ -164,6 +164,12 @@
     <ClInclude Include="LightObserver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Firefly.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamicLight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="phong.frag">

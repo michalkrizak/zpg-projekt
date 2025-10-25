@@ -8,8 +8,8 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform mat3 normalMatrix;
 void main(){
-  vec4 worldPos = model * vec4(position,1.0);
-  fragWorldPos = worldPos.xyz;
-  fragNormal = normalMatrix * normal;
-  gl_Position = projection * view * worldPos;
+    vec4 worldPos = model * vec4(position,1.0);
+    fragWorldPos = worldPos.xyz;
+    fragNormal = normalMatrix * normal;
+    gl_Position = projection * view * worldPos;
 }

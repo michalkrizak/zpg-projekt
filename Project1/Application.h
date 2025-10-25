@@ -6,6 +6,8 @@
 #include "Camera.h"
 
 class Light;
+class DynamicLight;
+class Firefly;
 
 class Application {
 public:
@@ -25,10 +27,16 @@ private:
     void createSphereScene();
     void createTriangleScene();
     void createSolarScene();
+    void createBackfaceTestScene();
+    void createFOVTestScene();
+    
+    void updateDynamicLights();
 
     Window window;
     std::vector<std::unique_ptr<Scene>> scenes;
     size_t activeSceneIndex = 0;
     std::shared_ptr<Camera> camera;
     std::shared_ptr<Light> mainLight;
+    std::vector<std::shared_ptr<DynamicLight>> dynamicLights;
+    std::vector<class Firefly*> fireflies; // non-owning pointers; objects are owned by Scene
 };

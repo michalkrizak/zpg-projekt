@@ -14,9 +14,9 @@ uniform Light lights[MAX_LIGHTS];
 uniform int numLights;
 uniform vec3 viewPos;
 uniform int modelType; // 0=Constant, 1=Lambert, 2=Phong, 3=Blinn
+uniform vec3 objectColor;
 
 void main() {
-    vec3 objectColor = vec3(0.8, 0.8, 0.8);
     
     if (modelType == 0) {
         // Constant - no lighting

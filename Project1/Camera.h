@@ -18,6 +18,8 @@ public:
     void processMouseMovement(float xOffset, float yOffset);
 
     glm::vec3 getPosition() const;
+    float getFOV() const;
+    void setFOV(float newFOV);
 
     void addObserver(const std::shared_ptr<ICameraObserver>& obs);
     void removeObserver(const std::shared_ptr<ICameraObserver>& obs);

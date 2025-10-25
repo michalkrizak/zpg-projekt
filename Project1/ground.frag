@@ -16,8 +16,10 @@ void main(){
   // Simple lighting for ground
   vec3 lightDir = lightPosition - vWorldPos;
   float dist = length(lightDir);
-  float attenuation = 1.0 / (1.0 + 0.05*dist + 0.005*dist*dist);
-  vec3 ambient = 0.4 * c;
+  // Balanced attenuation for moonlight-like main light
+  float attenuation = 1.0 / (1.0 + 0.06*dist + 0.006*dist*dist);
+  // Moderate ambient so ground is readable at night
+  vec3 ambient = 0.20 * c;
   vec3 lit = ambient + attenuation * lightColor * c;
   outColor = vec4(lit,1.0);
 }
