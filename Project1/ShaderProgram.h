@@ -6,6 +6,7 @@
 #include <vector>
 #include "CameraObserver.h"
 #include "LightObserver.h"
+#include "LightTypes.h"
 
 class ShaderProgram : public ICameraObserver, public ILightObserver {
 public:
@@ -34,10 +35,13 @@ public:
     void updateLightsUniforms();
     void clearLights();
     
-private:
-    static constexpr int MAX_LIGHTS = 16;
+    // Advanced lighting system
+    void setAdvancedLights(const std::vector<::LightData>& allLights);
     
-    struct LightData {
+private:
+    static constexpr int MAX_LIGHTS = 32;
+    
+    struct SimpleLightData {
         glm::vec3 position;
         glm::vec3 color;
     };
@@ -45,6 +49,6 @@ private:
     GLuint programId;
     glm::mat4 cachedView{1.0f};
     glm::mat4 cachedProj{1.0f};
-    std::vector<LightData> lights;
+    std::vector<SimpleLightData> lights;
     std::vector<Shader*> shaders;
 };

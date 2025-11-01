@@ -4,6 +4,8 @@
 #include <vector>
 #include <memory>
 #include "Camera.h"
+#include "Flashlight.h"
+#include "LightTypes.h"
 
 class Light;
 class DynamicLight;
@@ -19,6 +21,7 @@ public:
     void setActiveScene(size_t index);
 
     std::shared_ptr<Camera> getCamera() const { return camera; }
+    Flashlight& getFlashlight() { return flashlight; }
 
     Window& getWindow() { return window; }
 
@@ -29,6 +32,7 @@ private:
     void createSolarScene();
     void createBackfaceTestScene();
     void createFOVTestScene();
+    void createFormulaScene();
     
     void updateDynamicLights();
 
@@ -39,4 +43,8 @@ private:
     std::shared_ptr<Light> mainLight;
     std::vector<std::shared_ptr<DynamicLight>> dynamicLights;
     std::vector<class Firefly*> fireflies; // non-owning pointers; objects are owned by Scene
+    
+    // Nový systém osvětlení
+    Flashlight flashlight;
+    std::vector<LightData> staticLights;  // Ambientní, směrová, bodová světla
 };

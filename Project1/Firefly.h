@@ -20,7 +20,7 @@ public:
         float visualScaleVal = 0.03f,
         float verticalAmplitude = 0.15f)
         : DrawableObject(std::move(model), std::move(program))
-        , DynamicLight(centerPos, color * 0.3f, radius, speed, phaseOffset, verticalAmplitude)
+        , DynamicLight(centerPos, color * 0.15f, radius, speed, phaseOffset, verticalAmplitude)
         , visualScale(visualScaleVal)
     {
         // Visual setup: color and initial transform

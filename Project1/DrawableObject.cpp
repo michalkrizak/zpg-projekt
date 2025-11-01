@@ -18,9 +18,17 @@ void DrawableObject::draw() const {
     
     shaderProgram->setUniform("modelType", modelType);
     shaderProgram->setUniform("objectColor", color);
+    
+    // Material coefficients
+    shaderProgram->setUniform("ra", ra);
+    shaderProgram->setUniform("rd", rd);
+    shaderProgram->setUniform("rs", rs);
+    shaderProgram->setUniform("h", h);
 
     model->bindModel();
     glDrawArrays(GL_TRIANGLES, 0, model->getCount());
+    // Unbind program after drawing
+    glUseProgram(0);
 }
 
 void DrawableObject::draw(const glm::vec3& viewPos) const {
@@ -37,9 +45,17 @@ void DrawableObject::draw(const glm::vec3& viewPos) const {
     shaderProgram->setUniform("modelType", modelType);
     shaderProgram->setUniform("viewPos", viewPos);
     shaderProgram->setUniform("objectColor", color);
+    
+    // Material coefficients
+    shaderProgram->setUniform("ra", ra);
+    shaderProgram->setUniform("rd", rd);
+    shaderProgram->setUniform("rs", rs);
+    shaderProgram->setUniform("h", h);
 
     model->bindModel();
     glDrawArrays(GL_TRIANGLES, 0, model->getCount());
+    // Unbind program after drawing
+    glUseProgram(0);
 }
 
 TransformComposite& DrawableObject::getTransform() {

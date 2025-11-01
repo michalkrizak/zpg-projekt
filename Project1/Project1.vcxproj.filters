@@ -170,6 +170,12 @@
     <ClInclude Include="DynamicLight.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Flashlight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LightTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="phong.frag">
@@ -185,6 +191,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="universal.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="advanced_lighting.frag">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

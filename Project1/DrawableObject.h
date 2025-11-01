@@ -21,10 +21,30 @@ public:
     void setColor(const glm::vec3& c) { color = c; }
     glm::vec3 getColor() const { return color; }
 
+    // Material properties from lighting model
+    void setMaterial(float ambientCoeff, float diffuseCoeff, float specularCoeff, float shininess) {
+        ra = ambientCoeff;
+        rd = diffuseCoeff;
+        rs = specularCoeff;
+        h = shininess;
+    }
+    void getMaterial(float& ambientCoeff, float& diffuseCoeff, float& specularCoeff, float& shininess) const {
+        ambientCoeff = ra;
+        diffuseCoeff = rd;
+        specularCoeff = rs;
+        shininess = h;
+    }
+
 protected:
     std::unique_ptr<Model> model;
     std::shared_ptr<ShaderProgram> shaderProgram;
     TransformComposite transform;
     int modelType = 0; // 0=Constant, 1=Lambert, 2=Phong, 3=Blinn
     glm::vec3 color{0.8f, 0.8f, 0.8f};
+    
+    // Material coefficients
+    float ra = 0.1f;  // ambient
+    float rd = 1.0f;  // diffuse
+    float rs = 0.5f;  // specular
+    float h = 32.0f;  // shininess
 };

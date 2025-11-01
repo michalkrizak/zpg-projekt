@@ -18,6 +18,7 @@ public:
     void processMouseMovement(float xOffset, float yOffset);
 
     glm::vec3 getPosition() const;
+    glm::vec3 getFront() const;
     float getFOV() const;
     void setFOV(float newFOV);
 

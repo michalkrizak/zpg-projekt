@@ -158,8 +158,10 @@
   <ItemGroup>
     <ClInclude Include="DynamicLight.h" />
     <ClInclude Include="Firefly.h" />
+    <ClInclude Include="Flashlight.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="LightObserver.h" />
+    <ClInclude Include="LightTypes.h" />
     <ClInclude Include="TransformComponent.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="CameraObserver.h" />
@@ -187,6 +189,7 @@
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="advanced_lighting.frag" />
     <None Include="blinn.frag" />
     <None Include="common.vert" />
     <None Include="constant.frag" />

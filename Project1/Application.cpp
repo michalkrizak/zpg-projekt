@@ -62,6 +62,13 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
         case GLFW_KEY_4: g_app->setActiveScene(3); break;
         case GLFW_KEY_5: g_app->setActiveScene(4); break; // backface test scene
         case GLFW_KEY_6: g_app->setActiveScene(5); break; // FOV test scene
+    case GLFW_KEY_7: g_app->setActiveScene(6); break; // Formula scene
+        
+        // Flashlight control - F key
+        case GLFW_KEY_F:
+            g_app->getFlashlight().toggle();
+            printf("Flashlight %s\n", g_app->getFlashlight().getIsOn() ? "ON" : "OFF");
+            break;
         
         // FOV control - Q, E, R
         case GLFW_KEY_Q: 
@@ -100,6 +107,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
 Application::Application(int width, int height, const std::string& title)
     : window(width, height, title)
+    , flashlight(glm::vec3(1.0f, 1.0f, 0.9f), 2.0f, 12.5f, 17.5f)  // Bílé světlo, vyšší intenzita
 {
     g_app = this;
     glfwSetKeyCallback(window.getGLFWwindow(), keyCallback);
@@ -113,15 +121,33 @@ Application::Application(int width, int height, const std::string& title)
     glViewport(0, 0, fbWidth, fbHeight);
 
     // Create main light for all scenes - positioned high above, moonlight-like intensity
-    /*mainLight = std::make_shared<Light>(
-        glm::vec3(0.0f, 30.0f, 0.0f),
-        glm::vec3(0.3f, 0.3f, 0.28f)
-    );*/
+   mainLight = std::make_shared<Light>(
+        glm::vec3(0.0f, 40.0f, 0.0f),
+        glm::vec3(0.2f, 0.2f, 0.18f)
+    );
 
-    mainLight = std::make_shared<Light>(
+     /*mainLight = std::make_shared<Light>(
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(1.0f, 1.0f, 1.08f)
-    );
+    );*/
+    
+    // Inicializace různých typů osvětlení
+    // 1. Ambientní osvětlení (tmavé, noční prostředí)
+    staticLights.push_back(LightData::createAmbient(glm::vec3(0.1f, 0.1f, 0.15f), 0.05f));
+    
+    // 2. Směrové světlo (měsíc)
+    staticLights.push_back(LightData::createDirectional(
+        glm::vec3(-0.2f, -1.0f, -0.3f),  // Směr dolů a mírně do strany
+        glm::vec3(0.15f, 0.15f, 0.2f),   // Modravé měsíční světlo
+        0.3f                              // Nízká intenzita
+    ));
+    
+    // 3. Bodové světlo (např. lampa nebo oheň)
+    staticLights.push_back(LightData(
+        glm::vec3(5.0f, 1.0f, 5.0f),     // Pozice
+        glm::vec3(1.0f, 0.6f, 0.2f),     // Oranžová barva (oheň)
+        1.0f                              // Intenzita
+    ));
 }
 
 void Application::initialize() {
@@ -131,6 +157,7 @@ void Application::initialize() {
     createSolarScene();
     createBackfaceTestScene();
     createFOVTestScene();
+    createFormulaScene();
 }
 
 void Application::addScene(std::unique_ptr<Scene> scene) {
@@ -146,6 +173,72 @@ void Application::addScene(std::unique_ptr<Scene> scene) {
     }
 }
 
+void Application::createFormulaScene() {
+    auto scene = std::make_unique<Scene>();
+
+    Shader* vs = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fs = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
+    auto program = std::make_shared<ShaderProgram>(std::vector<Shader*>{vs, fs});
+
+    // Try loading the Formula 1 OBJ
+    auto model = Model::loadFromOBJ("assets/formula1.obj");
+    if (model) {
+        auto obj = std::make_unique<DrawableObject>(std::move(model), program);
+        auto t = std::make_unique<TransformComposite>();
+        // Adjust transforms to fit scene (scale down and place on ground)
+        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, -2.0f));
+        t->addTransformation(std::make_unique<Scale>(0.02f, 0.02f, 0.02f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2); // Phong shading
+        obj->setColor(glm::vec3(0.9f, 0.9f, 0.9f));
+        // Material: shiny car body (low ambient, full diffuse, high specular, high shininess)
+        obj->setMaterial(0.05f, 1.0f, 0.8f, 64.0f);
+        scene->addObject(std::move(obj));
+    } else {
+        std::cerr << "Formula scene: failed to load assets/formula1.obj" << std::endl;
+    }
+
+    // Load additional assets and place them around
+    struct AssetItem { const char* path; glm::vec3 translate; glm::vec3 scale; glm::vec3 color; };
+    std::vector<AssetItem> extras = {
+        { "assets/house.obj",   glm::vec3(-3.5f, -1.0f, -4.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.8f, 0.6f, 0.3f) },
+        { "assets/cube.obj",    glm::vec3( 3.0f, -1.0f, -3.0f), glm::vec3(0.7f, 0.7f, 0.7f), glm::vec3(0.7f, 0.7f, 0.9f) },
+        { "assets/square.obj",  glm::vec3( 0.0f, -0.5f,  2.5f), glm::vec3(2.0f, 0.1f, 2.0f), glm::vec3(0.2f, 0.2f, 0.25f) }
+    };
+    for (const auto& it : extras) {
+        if (auto m = Model::loadFromOBJ(it.path)) {
+            auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+            auto t = std::make_unique<TransformComposite>();
+            t->addTransformation(std::make_unique<Translate>(it.translate.x, it.translate.y, it.translate.z));
+            t->addTransformation(std::make_unique<Scale>(it.scale.x, it.scale.y, it.scale.z));
+            obj->getTransform().addTransformation(std::move(t));
+            obj->setModelType(2);
+            obj->setColor(it.color);
+            scene->addObject(std::move(obj));
+        } else {
+            std::cerr << "Formula scene: failed to load " << it.path << std::endl;
+        }
+    }
+
+    // Optional: simple ground under the model for reference
+    Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "ground.vert");
+    Shader* fsg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
+    auto groundProgram = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsg, fsg});
+    {
+        auto m = std::make_unique<Model>(plain, plainDataSize, 6);
+        auto ground = std::make_unique<DrawableObject>(std::move(m), groundProgram);
+        ground->setColor(glm::vec3(0.12f, 0.12f, 0.12f));
+        // Material: matte asphalt (low ambient, full diffuse, minimal specular, low shininess)
+        ground->setMaterial(0.1f, 1.0f, 0.05f, 8.0f);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(10.0f, 1.0f, 10.0f));
+        ground->getTransform().addTransformation(std::move(t));
+        scene->addObject(std::move(ground));
+    }
+
+    addScene(std::move(scene));
+}
 void Application::setActiveScene(size_t index) {
     if (index < scenes.size()) {
         activeSceneIndex = index;
@@ -174,6 +267,11 @@ void Application::run() {
         // WSAD input
         processWSAD(window.getGLFWwindow(), camera, delta);
         
+        // Update flashlight position and direction based on camera
+        if (camera) {
+            flashlight.updateFromCamera(camera->getPosition(), camera->getFront());
+        }
+        
         // Update dynamic lights (fireflies)
         updateDynamicLights();
 
@@ -196,9 +294,9 @@ void Application::run() {
 }
 
 void Application::createForestScene() {
-    // Forest shaders
+    // Forest shaders - používáme advanced_lighting.frag pro podporu všech typů světel
     Shader* vsForest = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fsForest = Shader::createFromFile(GL_FRAGMENT_SHADER, "phong.frag");
+    Shader* fsForest = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
     auto programForest = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsForest, fsForest});
 
     // Ground shaders
@@ -216,6 +314,9 @@ void Application::createForestScene() {
     {
         auto m = std::make_unique<Model>(plain, plainDataSize, 6);
         auto ground = std::make_unique<DrawableObject>(std::move(m), programGround);
+        ground->setColor(glm::vec3(0.1f, 0.3f, 0.1f)); // Tmavě zelená zem
+        // Material: grass/soil (low ambient, full diffuse, very low specular, low shininess)
+        ground->setMaterial(0.1f, 1.0f, 0.02f, 8.0f);
         auto t = std::make_unique<TransformComposite>();
         t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(30.0f, 1.0f, 30.0f));
@@ -227,6 +328,7 @@ void Application::createForestScene() {
     for (int i = 0; i < 150; ++i) {
         auto m = std::make_unique<Model>(tree, treeDataSize, 6);
         auto obj = std::make_unique<DrawableObject>(std::move(m), programForest);
+        obj->setColor(glm::vec3(0.15f, 0.3f, 0.1f)); // Tmavě zelená barva stromů
         float x = distPos(rng);
         float z = distPos(rng);
         float s = distScale(rng);
@@ -241,6 +343,7 @@ void Application::createForestScene() {
     for (int i = 0; i < 150; ++i) {
         auto m = std::make_unique<Model>(bushes, bushesDataSize, 6);
         auto obj = std::make_unique<DrawableObject>(std::move(m), programForest);
+        obj->setColor(glm::vec3(0.1f, 0.25f, 0.08f)); // Tmavě zelená barva keřů
         float x = distPos(rng);
         float z = distPos(rng);
         float s = distScale(rng) * 3.0f;
@@ -598,19 +701,49 @@ void Application::updateDynamicLights() {
     // Rebuild light uniforms each frame so moving lights update correctly
     if (!scenes.empty() && activeSceneIndex < scenes.size()) {
         auto programs = scenes[activeSceneIndex]->getShaderPrograms();
-        for (auto& sp : programs) {
-            sp->clearLights();
+        
+        // Sestavíme všechna světla do jednoho seznamu
+        std::vector<LightData> allLights;
+
+        // 1. Přidáme statická světla (ambient, directional, bodová)
+        allLights.insert(allLights.end(), staticLights.begin(), staticLights.end());
+
+        // 1a. Pro scénu s formulí (index 6) přidejme světlejší ambient, aby nebyla tma
+        if (activeSceneIndex == 6) {
+            allLights.push_back(LightData::createAmbient(glm::vec3(0.2f, 0.2f, 0.2f), 0.6f));
+            // a silnější konstantní směrové světlo (studiové)
+            allLights.push_back(LightData::createDirectional(
+                glm::vec3(-0.2f, -1.0f, -0.15f),           // směr shora mírně dopředu
+                glm::vec3(1.0f, 0.98f, 0.95f),              // téměř bílé světlo
+                1.2f                                        // vyšší intenzita
+            ));
         }
 
-        if (mainLight) {
-            mainLight->notifyObservers();
+        // 2. Přidáme baterku POUZE pokud je zapnutá
+        if (flashlight.getIsOn()) {
+            allLights.push_back(flashlight.getLightData());
         }
-        // Fireflies first to prioritize their visibility if MAX_LIGHTS is limited
-        for (auto& f : fireflies) {
-            f->notifyObservers();
+
+        // 3. Přidáme světlušky jen ve scéně lesa (index 0)
+        if (activeSceneIndex == 0) {
+            for (auto& f : fireflies) {
+                LightData fireflyLight(f->Light::getPosition(), f->Light::getColor(), 1.0f);
+                fireflyLight.constant = 1.0f;
+                fireflyLight.linear = 0.14f;
+                fireflyLight.quadratic = 0.07f;
+                allLights.push_back(fireflyLight);
+            }
         }
+
+        // 4. Přidáme další dynamická světla
         for (auto& l : dynamicLights) {
-            l->notifyObservers();
+            LightData dynamicLight(l->getPosition(), l->getColor(), 1.0f);
+            allLights.push_back(dynamicLight);
+        }
+        
+        // Nastavíme všechna světla do všech shader programů (pokročilý systém)
+        for (auto& sp : programs) {
+            sp->setAdvancedLights(allLights);
         }
     }
 }

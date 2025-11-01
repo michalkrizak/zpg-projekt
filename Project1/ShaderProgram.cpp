@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
+#include <cmath>
 
 ShaderProgram::ShaderProgram(const std::vector<Shader*>& shaders) : shaders(shaders) {
     programId = glCreateProgram();
@@ -73,6 +74,8 @@ void ShaderProgram::onCameraChanged(const glm::mat4& view, const glm::mat4& proj
     useProgram();
     setUniform("view", cachedView);
     setUniform("projection", cachedProj);
+    // Reset program binding
+    glUseProgram(0);
 }
 
 void ShaderProgram::setInitialViewProj(const glm::mat4& view, const glm::mat4& projection) {
@@ -92,7 +95,7 @@ void ShaderProgram::onLightChanged(const glm::vec3& position, const glm::vec3& c
     }
     
     if (!found && lights.size() < MAX_LIGHTS) {
-        lights.push_back({position, color});
+        lights.push_back(SimpleLightData{position, color});
     }
     
     updateLightsUniforms();
@@ -118,9 +121,51 @@ void ShaderProgram::updateLightsUniforms() {
         setUniform("lightPosition", lights[0].position);
         setUniform("lightColor", lights[0].color);
     }
+    // Reset program binding
+    glUseProgram(0);
 }
 
 void ShaderProgram::clearLights() {
     lights.clear();
     updateLightsUniforms();
+}
+
+void ShaderProgram::setAdvancedLights(const std::vector<::LightData>& allLights) {
+    useProgram();
+    
+    int enabledCount = 0;
+    for (size_t i = 0; i < allLights.size() && i < MAX_LIGHTS; ++i) {
+        const auto& light = allLights[i];
+        
+        std::string prefix = "lights[" + std::to_string(i) + "].";
+        
+        setUniform(prefix + "type", static_cast<int>(light.type));
+        setUniform(prefix + "position", light.position);
+        setUniform(prefix + "direction", light.direction);
+        setUniform(prefix + "color", light.color);
+        setUniform(prefix + "intensity", light.intensity);
+        setUniform(prefix + "cutOff", std::cos(light.cutOff));  // Předpočítáme cos pro shader
+        setUniform(prefix + "outerCutOff", std::cos(light.outerCutOff));
+        setUniform(prefix + "constant", light.constant);
+        setUniform(prefix + "linear", light.linear);
+        setUniform(prefix + "quadratic", light.quadratic);
+        setUniform(prefix + "enabled", light.enabled ? 1 : 0);
+        
+        if (light.enabled) {
+            enabledCount++;
+        }
+    }
+    
+    setUniform("numLights", static_cast<int>(allLights.size()));
+    
+    // Backward compatibility: pro starší shadery nastavíme první bodové světlo
+    for (const auto& light : allLights) {
+        if (light.enabled && light.type == LightType::POINT) {
+            setUniform("lightPosition", light.position);
+            setUniform("lightColor", light.color * light.intensity);
+            break;
+        }
+    }
+    // Reset program binding
+    glUseProgram(0);
 }

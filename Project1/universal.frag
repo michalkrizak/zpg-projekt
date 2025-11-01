@@ -16,6 +16,12 @@ uniform vec3 viewPos;
 uniform int modelType; // 0=Constant, 1=Lambert, 2=Phong, 3=Blinn
 uniform vec3 objectColor;
 
+// Material coefficients from lighting model
+uniform float ra;  // ambient coefficient
+uniform float rd;  // diffuse coefficient
+uniform float rs;  // specular coefficient
+uniform float h;   // shininess
+
 void main() {
     
     if (modelType == 0) {
@@ -26,7 +32,7 @@ void main() {
     
     vec3 norm = normalize(fragNormal);
     vec3 viewDir = normalize(viewPos - fragWorldPos);
-    vec3 ambient = vec3(0.1);
+    vec3 ambient = vec3(ra);
     vec3 result = ambient;
     
     for(int i = 0; i < numLights && i < MAX_LIGHTS; i++) {
@@ -34,7 +40,7 @@ void main() {
         
         // Diffuse (Lambert and up)
         float diff = max(dot(norm, lightDir), 0.0);
-        vec3 diffuse = diff * lights[i].color;
+        vec3 diffuse = rd * diff * lights[i].color;
         result += diffuse;
         
         if (modelType >= 2) {
@@ -42,13 +48,13 @@ void main() {
             if (modelType == 2) {
                 // Phong
                 vec3 reflectDir = reflect(-lightDir, norm);
-                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-                result += spec * lights[i].color;
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), h);
+                result += rs * spec * lights[i].color;
             } else if (modelType == 3) {
                 // Blinn-Phong
                 vec3 halfDir = normalize(lightDir + viewDir);
-                float spec = pow(max(dot(norm, halfDir), 0.0), 32.0);
-                result += spec * lights[i].color;
+                float spec = pow(max(dot(norm, halfDir), 0.0), h);
+                result += rs * spec * lights[i].color;
             }
         }
     }
