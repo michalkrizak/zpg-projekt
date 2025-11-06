@@ -10,9 +10,9 @@ public:
         float outerCutOffAngle = 17.5f)
         : lightData(LightData::createSpot(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f),
             color, cutOffAngle, outerCutOffAngle, intensity))
-        , isOn(false)  // Zaèíná vypnutá
+        , isOn(false)  // Zaï¿½ï¿½nï¿½ vypnutï¿½
     {
-        // Nastavení útlumu pro baterku (silnìjší svìtlo, ale kratší dosah)
+        // Nastavenï¿½ ï¿½tlumu pro baterku (silnï¿½jï¿½ï¿½ svï¿½tlo, ale kratï¿½ï¿½ dosah)
         lightData.constant = 1.0f;
         lightData.linear = 0.09f;
         lightData.quadratic = 0.032f;

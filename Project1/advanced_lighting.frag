@@ -5,7 +5,7 @@ out vec4 outColor;
 
 #define MAX_LIGHTS 32
 
-// Typy svìtel
+// Typy svï¿½tel
 #define LIGHT_POINT 0
 #define LIGHT_DIRECTIONAL 1
 #define LIGHT_SPOT 2
@@ -40,6 +40,10 @@ uniform float ra;  // ambient coefficient
 uniform float rd;  // diffuse coefficient
 uniform float rs;  // specular coefficient
 uniform float h;   // shininess
+
+// Texture support
+uniform int useTexture;
+uniform sampler2D textureSampler;
 
 vec3 calculatePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     vec3 lightDir = normalize(light.position - fragPos);
@@ -113,6 +117,16 @@ void main() {
     vec3 norm = normalize(fragNormal);
     vec3 viewDir = normalize(viewPos - fragWorldPos);
     
+    // Determine base color (texture or object color)
+    vec3 baseColor;
+    if (useTexture == 1) {
+        // Generate simple UV coordinates from world position for models without UVs
+        vec2 uv = vec2(fragWorldPos.x * 0.5 + 0.5, fragWorldPos.z * 0.5 + 0.5);
+        baseColor = texture(textureSampler, uv).rgb;
+    } else {
+        baseColor = objectColor;
+    }
+    
     vec3 result = vec3(0.0);
     
     for(int i = 0; i < numLights && i < MAX_LIGHTS; i++) {
@@ -134,5 +148,5 @@ void main() {
         }
     }
     
-    outColor = vec4(result * objectColor, 1.0);
+    outColor = vec4(result * baseColor, 1.0);
 }

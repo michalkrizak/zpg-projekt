@@ -12,6 +12,8 @@
 #include "Light.h"
 #include "DynamicLight.h"
 #include "Firefly.h"
+#include "Texture.h"
+#include "Skybox.h"
 #include "tree.h"
 #include "bushes.h"
 #include "plain.h"
@@ -180,10 +182,17 @@ void Application::createFormulaScene() {
     Shader* fs = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
     auto program = std::make_shared<ShaderProgram>(std::vector<Shader*>{vs, fs});
 
+    // Načteme textury (pokud existují, jinak použijeme pouze barvy)
+    auto formulaTexture = std::make_shared<Texture>("assets/textures/shrek.png");
+    auto houseTexture = std::make_shared<Texture>("assets/textures/skydome.png");
+    auto cubeTexture = std::make_shared<Texture>("assets/textures/metal.jpg");
+    auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
+
     // Try loading the Formula 1 OBJ
     auto model = Model::loadFromOBJ("assets/formula1.obj");
     if (model) {
         auto obj = std::make_unique<DrawableObject>(std::move(model), program);
+        obj->setTexture(formulaTexture); // Přidána textura
         auto t = std::make_unique<TransformComposite>();
         // Adjust transforms to fit scene (scale down and place on ground)
         t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, -2.0f));
@@ -198,35 +207,59 @@ void Application::createFormulaScene() {
         std::cerr << "Formula scene: failed to load assets/formula1.obj" << std::endl;
     }
 
-    // Load additional assets and place them around
-    struct AssetItem { const char* path; glm::vec3 translate; glm::vec3 scale; glm::vec3 color; };
-    std::vector<AssetItem> extras = {
-        { "assets/house.obj",   glm::vec3(-3.5f, -1.0f, -4.0f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.8f, 0.6f, 0.3f) },
-        { "assets/cube.obj",    glm::vec3( 3.0f, -1.0f, -3.0f), glm::vec3(0.7f, 0.7f, 0.7f), glm::vec3(0.7f, 0.7f, 0.9f) },
-        { "assets/square.obj",  glm::vec3( 0.0f, -0.5f,  2.5f), glm::vec3(2.0f, 0.1f, 2.0f), glm::vec3(0.2f, 0.2f, 0.25f) }
-    };
-    for (const auto& it : extras) {
-        if (auto m = Model::loadFromOBJ(it.path)) {
-            auto obj = std::make_unique<DrawableObject>(std::move(m), program);
-            auto t = std::make_unique<TransformComposite>();
-            t->addTransformation(std::make_unique<Translate>(it.translate.x, it.translate.y, it.translate.z));
-            t->addTransformation(std::make_unique<Scale>(it.scale.x, it.scale.y, it.scale.z));
-            obj->getTransform().addTransformation(std::move(t));
-            obj->setModelType(2);
-            obj->setColor(it.color);
-            scene->addObject(std::move(obj));
-        } else {
-            std::cerr << "Formula scene: failed to load " << it.path << std::endl;
-        }
+    // Load additional assets and place them around with textures
+    // House with wood texture
+    if (auto m = Model::loadFromOBJ("assets/house.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+        obj->setTexture(houseTexture); // Dřevěná textura
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(-3.5f, -1.0f, -4.0f));
+        t->addTransformation(std::make_unique<Scale>(0.5f, 0.5f, 0.5f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        obj->setColor(glm::vec3(0.8f, 0.6f, 0.3f));
+        scene->addObject(std::move(obj));
+    } else {
+        std::cerr << "Formula scene: failed to load assets/house.obj" << std::endl;
     }
 
-    // Optional: simple ground under the model for reference
+    // Cube with metal texture
+    if (auto m = Model::loadFromOBJ("assets/cube.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+        obj->setTexture(cubeTexture); // Kovová textura
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(3.0f, -1.0f, -3.0f));
+        t->addTransformation(std::make_unique<Scale>(0.7f, 0.7f, 0.7f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        obj->setColor(glm::vec3(0.7f, 0.7f, 0.9f));
+        scene->addObject(std::move(obj));
+    } else {
+        std::cerr << "Formula scene: failed to load assets/cube.obj" << std::endl;
+    }
+
+    // Square without texture (keep original)
+    if (auto m = Model::loadFromOBJ("assets/square.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(0.0f, -0.5f, 2.5f));
+        t->addTransformation(std::make_unique<Scale>(2.0f, 0.1f, 2.0f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        obj->setColor(glm::vec3(0.2f, 0.2f, 0.25f));
+        scene->addObject(std::move(obj));
+    } else {
+        std::cerr << "Formula scene: failed to load assets/square.obj" << std::endl;
+    }
+
+    // Optional: simple ground under the model for reference with texture
     Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "ground.vert");
     Shader* fsg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
     auto groundProgram = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsg, fsg});
     {
         auto m = std::make_unique<Model>(plain, plainDataSize, 6);
         auto ground = std::make_unique<DrawableObject>(std::move(m), groundProgram);
+        ground->setTexture(groundTexture); // Asfaltová textura
         ground->setColor(glm::vec3(0.12f, 0.12f, 0.12f));
         // Material: matte asphalt (low ambient, full diffuse, minimal specular, low shininess)
         ground->setMaterial(0.1f, 1.0f, 0.05f, 8.0f);
@@ -236,6 +269,23 @@ void Application::createFormulaScene() {
         ground->getTransform().addTransformation(std::move(t));
         scene->addObject(std::move(ground));
     }
+
+    // Přidání skyboxu
+    Shader* vsSkybox = Shader::createFromFile(GL_VERTEX_SHADER, "skybox.vert");
+    Shader* fsSkybox = Shader::createFromFile(GL_FRAGMENT_SHADER, "skybox.frag");
+    auto skyboxProgram = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSkybox, fsSkybox});
+    
+    std::vector<std::string> cubemapFaces = {
+        "assets/textures/cubemap/posx.jpg",
+        "assets/textures/cubemap/negx.jpg",
+        "assets/textures/cubemap/posy.jpg",
+        "assets/textures/cubemap/negy.jpg",
+        "assets/textures/cubemap/posz.jpg",
+        "assets/textures/cubemap/negz.jpg"
+    };
+    
+    auto skybox = std::make_unique<Skybox>(cubemapFaces, skyboxProgram);
+    scene->setSkybox(std::move(skybox));
 
     addScene(std::move(scene));
 }
@@ -282,7 +332,14 @@ void Application::run() {
 
         if (!scenes.empty() && activeSceneIndex < scenes.size()) {
             if (camera) {
-                scenes[activeSceneIndex]->drawAll(camera->getPosition());
+                // Pro scénu s formulí (index 6) použijeme vykreslení se skyboxem
+                if (activeSceneIndex == 6) {
+                    scenes[activeSceneIndex]->drawAll(camera->getPosition(), 
+                                                     camera->getViewMatrix(), 
+                                                     camera->getProjectionMatrix(aspect));
+                } else {
+                    scenes[activeSceneIndex]->drawAll(camera->getPosition());
+                }
             } else {
                 scenes[activeSceneIndex]->drawAll();
             }
@@ -306,15 +363,21 @@ void Application::createForestScene() {
 
     auto forest = std::make_unique<Scene>();
 
+    auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
+    auto shrekTexture = std::make_shared<Texture>("assets/textures/shrek.png");
+    auto fionaTexture = std::make_shared<Texture>("assets/textures/fiona.png");
+    auto toiletTexture = std::make_shared<Texture>("assets/textures/toilet.png");
+
     std::mt19937 rng(1337);
     std::uniform_real_distribution<float> distPos(-15.0f, 15.0f);
     std::uniform_real_distribution<float> distScale(0.15f, 0.35f);
 
-    // Ground plane
+    // Ground plane s texturou trávy
     {
         auto m = std::make_unique<Model>(plain, plainDataSize, 6);
-        auto ground = std::make_unique<DrawableObject>(std::move(m), programGround);
-        ground->setColor(glm::vec3(0.1f, 0.3f, 0.1f)); // Tmavě zelená zem
+        auto ground = std::make_unique<DrawableObject>(std::move(m), programForest);
+        ground->setTexture(groundTexture); // Textura trávy
+        ground->setColor(glm::vec3(0.1f, 0.3f, 0.1f)); // Tmavě zelená zem (fallback)
         // Material: grass/soil (low ambient, full diffuse, very low specular, low shininess)
         ground->setMaterial(0.1f, 1.0f, 0.02f, 8.0f);
         auto t = std::make_unique<TransformComposite>();
@@ -352,6 +415,54 @@ void Application::createForestScene() {
         t->addTransformation(std::make_unique<Scale>(s, s, s));
         obj->getTransform().addTransformation(std::move(t));
         forest->addObject(std::move(obj));
+    }
+
+    if (auto m = Model::loadFromOBJ("assets/shrek.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), programForest);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(0.4f, 0.4f, 0.4f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        
+       // obj->setColor(glm::vec3(0.2f, 0.2f, 0.25f));
+        obj->setTexture(shrekTexture);
+        forest->addObject(std::move(obj));
+    }
+    else {
+        std::cerr << "Forest scene: failed to load assets/shrek.obj" << std::endl;
+    }
+
+    if (auto m = Model::loadFromOBJ("assets/fiona.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), programForest);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(5.0f, -1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(0.4f, 0.4f, 0.4f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+
+        // obj->setColor(glm::vec3(0.2f, 0.2f, 0.25f));
+        obj->setTexture(fionaTexture);
+        forest->addObject(std::move(obj));
+    }
+    else {
+        std::cerr << "Forest scene: failed to load assets/fiona.obj" << std::endl;
+    }
+
+    if (auto m = Model::loadFromOBJ("assets/toilet.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), programForest);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(2.5f, -1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(0.4f, 0.4f, 0.4f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+
+        // obj->setColor(glm::vec3(0.2f, 0.2f, 0.25f));
+        obj->setTexture(toiletTexture);
+        forest->addObject(std::move(obj));
+    }
+    else {
+        std::cerr << "Forest scene: failed to load assets/toilet.obj" << std::endl;
     }
 
     mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programForest));

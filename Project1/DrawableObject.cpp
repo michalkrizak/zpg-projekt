@@ -25,6 +25,15 @@ void DrawableObject::draw() const {
     shaderProgram->setUniform("rs", rs);
     shaderProgram->setUniform("h", h);
 
+    // Texture support
+    if (useTexture && texture) {
+        texture->bind(0);
+        shaderProgram->setUniform("useTexture", 1);
+        shaderProgram->setUniform("textureSampler", 0);
+    } else {
+        shaderProgram->setUniform("useTexture", 0);
+    }
+
     model->bindModel();
     glDrawArrays(GL_TRIANGLES, 0, model->getCount());
     // Unbind program after drawing
@@ -51,6 +60,15 @@ void DrawableObject::draw(const glm::vec3& viewPos) const {
     shaderProgram->setUniform("rd", rd);
     shaderProgram->setUniform("rs", rs);
     shaderProgram->setUniform("h", h);
+
+    // Texture support
+    if (useTexture && texture) {
+        texture->bind(0);
+        shaderProgram->setUniform("useTexture", 1);
+        shaderProgram->setUniform("textureSampler", 0);
+    } else {
+        shaderProgram->setUniform("useTexture", 0);
+    }
 
     model->bindModel();
     glDrawArrays(GL_TRIANGLES, 0, model->getCount());

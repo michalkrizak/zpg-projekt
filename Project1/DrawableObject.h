@@ -2,7 +2,9 @@
 #include "Model.h"
 #include "ShaderProgram.h"
 #include "TransformComposite.h"
+#include "Texture.h"
 #include <glm/glm.hpp>
+#include <memory>
 
 class DrawableObject {
 public:
@@ -35,6 +37,14 @@ public:
         shininess = h;
     }
 
+    void setTexture(std::shared_ptr<Texture> tex) {
+        texture = tex;
+        useTexture = (tex != nullptr);
+    }
+    
+    bool hasTexture() const { return useTexture; }
+    std::shared_ptr<Texture> getTexture() const { return texture; }
+
 protected:
     std::unique_ptr<Model> model;
     std::shared_ptr<ShaderProgram> shaderProgram;
@@ -47,4 +57,8 @@ protected:
     float rd = 1.0f;  // diffuse
     float rs = 0.5f;  // specular
     float h = 32.0f;  // shininess
+
+    // Texture support
+    std::shared_ptr<Texture> texture;
+    bool useTexture = false;
 };

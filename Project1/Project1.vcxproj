@@ -148,9 +148,11 @@
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
+    <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="sphere.cpp" />
     <ClCompile Include="suzi_flat.cpp" />
     <ClCompile Include="suzi_smooth.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TransformComponent.cpp" />
     <ClCompile Include="tree.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -180,9 +182,12 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShaderProgram.h" />
+    <ClInclude Include="Skybox.h" />
     <ClInclude Include="sphere.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="suzi_flat.h" />
     <ClInclude Include="suzi_smooth.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="TransformComposite.h" />
     <ClInclude Include="Translate.h" />
     <ClInclude Include="tree.h" />
@@ -194,6 +199,8 @@
     <None Include="common.vert" />
     <None Include="constant.frag" />
     <None Include="phong.frag" />
+    <None Include="skybox.frag" />
+    <None Include="skybox.vert" />
     <None Include="universal.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

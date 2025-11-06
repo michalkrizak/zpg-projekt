@@ -34,17 +34,30 @@ uniform float rd;  // diffuse coefficient
 uniform float rs;  // specular coefficient
 uniform float h;   // shininess
 
+// Texture support
+uniform int useTexture;
+uniform sampler2D textureSampler;
+
 float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
 
 void main(){
-  // Base ground albedo (checker + small noise)
-  float tileSize = 2.0;
-  vec2 t = floor(vWorldPos.xz / tileSize);
-  float checker = mod(t.x + t.y, 2.0);
-  vec3 colA = vec3(0.18, 0.35, 0.12);
-  vec3 colB = vec3(0.15, 0.32, 0.10);
-  float n = hash(t) * 0.08;
-  vec3 baseColor = mix(colA, colB, checker) + n;
+  // Base ground albedo (checker + small noise or texture)
+  vec3 baseColor;
+  if (useTexture == 1) {
+    // Use texture with tiling - hustější opakování pro realistický vzhled trávy
+    // UV souřadnice upraveny z rozsahu <0,1> na <0,10> pro více opakování
+    vec2 uv = vWorldPos.xz * 10.0; // Scale for denser tiling (10x repeat)
+    baseColor = texture(textureSampler, uv).rgb;
+  } else {
+    // Original procedural checker pattern
+    float tileSize = 2.0;
+    vec2 t = floor(vWorldPos.xz / tileSize);
+    float checker = mod(t.x + t.y, 2.0);
+    vec3 colA = vec3(0.18, 0.35, 0.12);
+    vec3 colB = vec3(0.15, 0.32, 0.10);
+    float n = hash(t) * 0.08;
+    baseColor = mix(colA, colB, checker) + n;
+  }
 
   // Assume ground is mostly horizontal
   vec3 normal = vec3(0.0, 1.0, 0.0);
