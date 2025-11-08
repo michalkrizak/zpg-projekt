@@ -1,6 +1,7 @@
 #version 330 core
 in vec3 fragNormal;
 in vec3 fragWorldPos;
+in vec2 fragTexCoord;
 out vec4 outColor;
 
 #define MAX_LIGHTS 32
@@ -120,9 +121,8 @@ void main() {
     // Determine base color (texture or object color)
     vec3 baseColor;
     if (useTexture == 1) {
-        // Generate simple UV coordinates from world position for models without UVs
-        vec2 uv = vec2(fragWorldPos.x * 0.5 + 0.5, fragWorldPos.z * 0.5 + 0.5);
-        baseColor = texture(textureSampler, uv).rgb;
+        // Use actual UV coordinates from the model
+        baseColor = texture(textureSampler, fragTexCoord).rgb;
     } else {
         baseColor = objectColor;
     }

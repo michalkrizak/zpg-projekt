@@ -17,12 +17,20 @@ Model::Model(const float* vertices, size_t size, int vertexSize) {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
 
+    // Position attribute (location = 0)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    // Normal attribute (location = 1)
     if (vertexSize >= 6) {
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(3 * sizeof(float)));
         glEnableVertexAttribArray(1);
+    }
+    
+    // Texture coordinate attribute (location = 2)
+    if (vertexSize >= 8) {
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
     }
 }
 
@@ -94,14 +102,16 @@ std::unique_ptr<Model> Model::loadFromOBJ(const std::string& path) {
 
     std::vector<float> positions; // flat array 3 floats per vertex
     std::vector<float> normals;   // flat array 3 floats per normal
-    std::vector<float> out;       // interleaved pos(3)+normal(3)
+    std::vector<float> texcoords; // flat array 2 floats per texcoord
+    std::vector<float> out;       // interleaved pos(3)+normal(3)+texcoord(2)
 
     std::string line;
     positions.reserve(1024);
     normals.reserve(1024);
+    texcoords.reserve(1024);
     out.reserve(4096);
 
-    auto pushVertex = [&](int vi, int vni, const float fallbackN[3]) {
+    auto pushVertex = [&](int vi, int vti, int vni, const float fallbackN[3]) {
         // OBJ indices are 1-based; allow negative indices (relative to end)
         auto fixIndex = [](int idx, int count) {
             if (idx > 0) return idx - 1;          // 1..N -> 0..N-1
@@ -111,8 +121,10 @@ std::unique_ptr<Model> Model::loadFromOBJ(const std::string& path) {
 
         int pCount = static_cast<int>(positions.size() / 3);
         int nCount = static_cast<int>(normals.size() / 3);
+        int tCount = static_cast<int>(texcoords.size() / 2);
         int pIdx = fixIndex(vi, pCount);
         int nIdx = (vni != 0) ? fixIndex(vni, nCount) : -1;
+        int tIdx = (vti != 0) ? fixIndex(vti, tCount) : -1;
 
         const float* p = &positions[pIdx * 3];
         const float* n = fallbackN;
@@ -125,7 +137,14 @@ std::unique_ptr<Model> Model::loadFromOBJ(const std::string& path) {
             n = tempN;
         }
 
-        out.insert(out.end(), { p[0], p[1], p[2], n[0], n[1], n[2] });
+        // Get texture coordinates or use default (0,0)
+        float u = 0.0f, v = 0.0f;
+        if (tIdx >= 0) {
+            u = texcoords[tIdx * 2];
+            v = texcoords[tIdx * 2 + 1];
+        }
+
+        out.insert(out.end(), { p[0], p[1], p[2], n[0], n[1], n[2], u, v });
     };
 
     while (std::getline(in, line)) {
@@ -147,6 +166,9 @@ std::unique_ptr<Model> Model::loadFromOBJ(const std::string& path) {
             float len = std::sqrt(x*x + y*y + z*z);
             if (len > 1e-6f) { x/=len; y/=len; z/=len; }
             normals.push_back(x); normals.push_back(y); normals.push_back(z);
+        } else if (tag == "vt") {
+            float u, v; iss >> u >> v;
+            texcoords.push_back(u); texcoords.push_back(v);
         } else if (tag == "f") {
             // Read face vertices (3+ tokens)
             std::vector<std::tuple<int,int,int>> face; face.reserve(8);
@@ -190,12 +212,12 @@ std::unique_ptr<Model> Model::loadFromOBJ(const std::string& path) {
                     fallbackPtr = fallbackN;
                 }
 
-                pushVertex(vi0, vn0, fallbackPtr);
-                pushVertex(vi1, vn1, fallbackPtr);
-                pushVertex(vi2, vn2, fallbackPtr);
+                pushVertex(vi0, vt0, vn0, fallbackPtr);
+                pushVertex(vi1, vt1, vn1, fallbackPtr);
+                pushVertex(vi2, vt2, vn2, fallbackPtr);
             }
         }
-        // ignore other tags (vt, mtllib, usemtl, etc.) for now
+        // ignore other tags (mtllib, usemtl, etc.) for now
     }
 
     if (out.empty()) {
@@ -203,6 +225,7 @@ std::unique_ptr<Model> Model::loadFromOBJ(const std::string& path) {
         return nullptr;
     }
 
-    // Build Model from the interleaved vertex data
-    return std::make_unique<Model>(out.data(), out.size() * sizeof(float), 6);
+    // Build Model from the interleaved vertex data with UV coordinates
+    // Format: pos(3) + normal(3) + texcoord(2) = 8 floats per vertex
+    return std::make_unique<Model>(out.data(), out.size() * sizeof(float), 8);
 }

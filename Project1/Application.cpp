@@ -366,7 +366,7 @@ void Application::createForestScene() {
     auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
     auto shrekTexture = std::make_shared<Texture>("assets/textures/shrek.png");
     auto fionaTexture = std::make_shared<Texture>("assets/textures/fiona.png");
-    auto toiletTexture = std::make_shared<Texture>("assets/textures/toilet.png");
+    auto toiletTexture = std::make_shared<Texture>("assets/textures/toiled.jpg");
 
     std::mt19937 rng(1337);
     std::uniform_real_distribution<float> distPos(-15.0f, 15.0f);
@@ -436,7 +436,7 @@ void Application::createForestScene() {
     if (auto m = Model::loadFromOBJ("assets/fiona.obj")) {
         auto obj = std::make_unique<DrawableObject>(std::move(m), programForest);
         auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Translate>(5.0f, -1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Translate>(1.0f, -1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(0.4f, 0.4f, 0.4f));
         obj->getTransform().addTransformation(std::move(t));
         obj->setModelType(2);
@@ -449,10 +449,10 @@ void Application::createForestScene() {
         std::cerr << "Forest scene: failed to load assets/fiona.obj" << std::endl;
     }
 
-    if (auto m = Model::loadFromOBJ("assets/toilet.obj")) {
+    if (auto m = Model::loadFromOBJ("assets/toiled.obj")) {
         auto obj = std::make_unique<DrawableObject>(std::move(m), programForest);
         auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Translate>(2.5f, -1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Translate>(-1.0f, -1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(0.4f, 0.4f, 0.4f));
         obj->getTransform().addTransformation(std::move(t));
         obj->setModelType(2);
@@ -462,7 +462,7 @@ void Application::createForestScene() {
         forest->addObject(std::move(obj));
     }
     else {
-        std::cerr << "Forest scene: failed to load assets/toilet.obj" << std::endl;
+        std::cerr << "Forest scene: failed to load assets/toiled.obj" << std::endl;
     }
 
     mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programForest));
@@ -523,6 +523,25 @@ void Application::createForestScene() {
     // Store non-owning pointer for per-frame updates
     fireflies.push_back(fireflyPtr);
     }
+
+    // Skydome - velká polokoule/koule s texturou oblohy
+    /*auto skydomeTexture = std::make_shared<Texture>("assets/textures/skydome.png");
+    Shader* vsSkydome = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsSkydome = Shader::createFromFile(GL_FRAGMENT_SHADER, "skydome.frag");
+    auto programSkydome = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSkydome, fsSkydome});
+    {
+        auto m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        auto skydome = std::make_unique<DrawableObject>(std::move(m), programSkydome);
+        skydome->setTexture(skydomeTexture);
+        skydome->setColor(glm::vec3(1.0f, 1.0f, 1.0f)); // Bílá, aby textura nebyla zkreslená
+        auto t = std::make_unique<TransformComposite>();
+        // Velká koule nad scénou (kopule)
+        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f)); // Na úrovni země
+        t->addTransformation(std::make_unique<Scale>(50.0f, 50.0f, 50.0f)); // Velká, aby pokryla celou scénu
+        skydome->getTransform().addTransformation(std::move(t));
+        skydome->setModelType(0); // Constant shader (žádné osvětlení)
+        forest->addObject(std::move(skydome));
+    }*/
 
     addScene(std::move(forest));
 }
