@@ -11,8 +11,10 @@ Window::Window(int width, int height, const std::string& title) {
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
-    // Povolit zmìnu velikosti okna
+    // Povolit zmï¿½nu velikosti okna
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    // Enable stencil buffer
+    glfwWindowHint(GLFW_STENCIL_BITS, 8);
 
     window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!window) {
