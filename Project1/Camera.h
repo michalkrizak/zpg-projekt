@@ -38,7 +38,7 @@ private:
 
     float fov = 45.0f;
     float nearPlane = 0.1f;
-    float farPlane = 500.0f;  // Increased for large terrain visibility
+    float farPlane = 500.0f;  // size of visibility range
 
     std::vector<std::weak_ptr<ICameraObserver>> observers;
 

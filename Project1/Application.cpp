@@ -275,7 +275,7 @@ void Application::createFormulaScene() {
     }
 
     // Optional: simple ground under the model for reference with texture
-    Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "ground.vert");
+    Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
     Shader* fsg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
     auto groundProgram = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsg, fsg});
     {
@@ -381,7 +381,7 @@ void Application::createForestScene() {
     auto programForest = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsForest, fsForest});
 
     // Ground shaders
-    Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "ground.vert");
+    Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
     Shader* fsg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
     auto programGround = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsg, fsg});
 
@@ -443,14 +443,15 @@ void Application::createForestScene() {
     {
         auto m = std::make_unique<Model>(plain, plainDataSize, 6);
         auto ground = std::make_unique<DrawableObject>(std::move(m), programForest);
-        ground->setTexture(groundTexture); // Textura trávy
-        ground->setColor(glm::vec3(0.1f, 0.3f, 0.1f)); // Tmavě zelená zem (fallback)
+        
+        //ground->setColor(glm::vec3(0.1f, 0.3f, 0.1f)); // Tmavě zelená zem (fallback)
         // Material: grass/soil (low ambient, full diffuse, very low specular, low shininess)
         ground->setMaterial(0.1f, 1.0f, 0.02f, 8.0f);
         auto t = std::make_unique<TransformComposite>();
         t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(30.0f, 1.0f, 30.0f));
         ground->getTransform().addTransformation(std::move(t));
+        ground->setTexture(groundTexture); // Textura trávy
         forest->addObject(std::move(ground));
     }
 
