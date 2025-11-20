@@ -13,7 +13,7 @@ uniform mat3 normalMatrix;
 // === TESTOVANI TRANSFORMACI ===
 // Test 1: Zmena w-souradnice
 // Nastavte w na ruzne hodnoty (500, 200, atd.) pro overeni spravne implementace
-const float w = 200.0; // Standardni hodnota. Zkuste: 500.0, 200.0, 20.0
+const float w = 1.0; // Standardni hodnota. Zkuste: 500.0, 200.0, 20.0
 
 // Test 2: Vlastni transformacni matice
 // Jednotkova matice s upravenym prvkem [3][3] (ctvrty radek, ctvrty sloupec)

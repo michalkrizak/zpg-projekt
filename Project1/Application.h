@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "Flashlight.h"
 #include "LightTypes.h"
+#include "ArcadeGame.h"
 
 class Light;
 class DynamicLight;
@@ -30,6 +31,9 @@ public:
     void handleMouseClick(double xpos, double ypos);
     void deleteSelectedObject();
     void plantTreeAtClick(double xpos, double ypos);
+    
+    // Arcade game
+    ArcadeGame& getArcadeGame() { return arcadeGame; }
 
 private:
     void createForestScene();
@@ -39,6 +43,7 @@ private:
     void createBackfaceTestScene();
     void createTreePlantingScene();
     void createFormulaScene();
+    void createArcadeScene();
     
     void updateDynamicLights();
 
@@ -56,4 +61,7 @@ private:
     
     // Object picking
     unsigned int nextObjectID = 1;
+    
+    // Arcade game
+    ArcadeGame arcadeGame;
 };

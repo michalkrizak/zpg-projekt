@@ -19,6 +19,9 @@
 #include "bushes.h"
 #include "plain.h"
 #include "sphere.h"
+#include "gift.h"
+#include "LinePathTransform.h"
+#include "Target.h"
 
 static Application* g_app = nullptr;
 // Simple mouse state for right-button look
@@ -77,6 +80,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
         case GLFW_KEY_5: g_app->setActiveScene(4); break; // backface test scene
         case GLFW_KEY_6: g_app->setActiveScene(5); break; // Tree planting scene
         case GLFW_KEY_7: g_app->setActiveScene(6); break; // Formula scene
+        case GLFW_KEY_8: g_app->setActiveScene(7); break; // Arcade game scene
         
         // Delete selected object
         case GLFW_KEY_DELETE:
@@ -177,6 +181,7 @@ void Application::initialize() {
     createBackfaceTestScene();
     createTreePlantingScene();
     createFormulaScene();
+    createArcadeScene();
 }
 
 void Application::addScene(std::unique_ptr<Scene> scene) {
@@ -715,55 +720,294 @@ void Application::createSolarScene() {
     auto solarScene = std::make_unique<Scene>();
 
     Shader* vsSolar = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fsSun = Shader::createFromFile(GL_FRAGMENT_SHADER, "constant.frag");
-    Shader* fsPlanet = Shader::createFromFile(GL_FRAGMENT_SHADER, "color_phong.frag");
+    Shader* fsSun = Shader::createFromFile(GL_FRAGMENT_SHADER, "emissive.frag");
+    Shader* fsPlanet = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
     auto programSun = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSolar, fsSun});
     auto programPlanet = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSolar, fsPlanet});
 
-    // SUN
+    // Načtení textur planet
+    auto sunTexture = std::make_shared<Texture>("assets/textures/planets/sun.jpg");
+    auto mercuryTexture = std::make_shared<Texture>("assets/textures/planets/mercury.jpg");
+    auto venusTexture = std::make_shared<Texture>("assets/textures/planets/venus.jpg");
+    auto jupiterTexture = std::make_shared<Texture>("assets/textures/planets/jupiter.jpg");
+    auto saturnTexture = std::make_shared<Texture>("assets/textures/planets/saturn.jpg");
+    auto uranTexture = std::make_shared<Texture>("assets/textures/planets/uran.jpg");
+    auto neptunTexture = std::make_shared<Texture>("assets/textures/planets/neptun.jpg");
+    auto earthTexture = std::make_shared<Texture>("assets/textures/planets/earth.jpg");
+    auto moonTexture = std::make_shared<Texture>("assets/textures/planets/moon.jpg");
+    auto marsTexture = std::make_shared<Texture>("assets/textures/planets/mars.jpg");
+
+    // POZN.: Built-in sphere nemá UV koordináty, použijeme cube.obj jako náhradu
+    // V budoucnu můžete nahradit správným sphere.obj s UV
+    std::string planetModelPath = "assets/sphereUV.obj";  // Dočasně použijeme cube místo sphere
+    auto sphereModelWithUV = Model::loadFromOBJ(planetModelPath);
+    if (!sphereModelWithUV) {
+        std::cerr << "Warning: Could not load " << planetModelPath << ", planets will not have textures" << std::endl;
+    } else {
+        std::cout << "Successfully loaded planet model with UV coordinates" << std::endl;
+    }
+
+    // SLUNCE - stacionární ve středu, rotuje kolem své osy
     {
-        auto m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) {
+            m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        }
         auto sun = std::make_unique<DrawableObject>(std::move(m), programSun);
         auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Scale>(1.2f, 1.2f, 1.2f));
+        // Rotace Slunce kolem své osy (velmi pomalá - 27 dní)
+        t->addTransformation(std::make_unique<DynamicRotate>(0.05f, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(2.0f, 2.0f, 2.0f));
         sun->getTransform().addTransformation(std::move(t));
         sun->setModelType(0);
-        sun->setColor(glm::vec3(1.0f, 0.9f, 0.2f));
+        sun->setTexture(sunTexture);
+        sun->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         solarScene->addObject(std::move(sun));
     }
 
-    // EARTH orbiting around SUN
-    float earthOrbitRadius = 5.0f;
-    float earthOrbitSpeed = 0.6f;
-    float earthScale = 0.5f;
+    // MERKUR - nejblíže Slunci, nejrychlejší oběh (88 dní), velmi pomalá rotace (59 dní)
+    float mercuryOrbitRadius = 3.5f;
+    float mercuryOrbitSpeed = 1.6f;  // nejrychlejší orbitální rychlost
+    float mercuryRotationSpeed = 0.15f;  // velmi pomalá rotace
+    float mercuryScale = 0.18f;  // nejmenší planeta
     {
-        auto m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        auto mercury = std::make_unique<DrawableObject>(std::move(m), programPlanet);
+        auto t = std::make_unique<TransformComposite>();
+        // 1. Orbit kolem Slunce
+        t->addTransformation(std::make_unique<DynamicRotate>(mercuryOrbitSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Translate>(mercuryOrbitRadius, 0.0f, 0.0f));
+        // 2. Rotace kolem vlastní osy
+        t->addTransformation(std::make_unique<DynamicRotate>(mercuryRotationSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(mercuryScale, mercuryScale, mercuryScale));
+        mercury->getTransform().addTransformation(std::move(t));
+        mercury->setTexture(mercuryTexture);
+        //mercury->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        mercury->setModelType(2);
+        solarScene->addObject(std::move(mercury));
+    }
+
+
+    // VENUŠE - podobná velikost jako Země (225 dní), zpětná rotace (243 dní)
+    float venusOrbitRadius = 5.5f;
+    float venusOrbitSpeed = 1.1f;  // rychlejší než Země
+    float venusRotationSpeed = -0.1f;  // velmi pomalá zpětná rotace (záporná)
+    float venusScale = 0.45f;  // téměř jako Země
+    {
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        auto venus = std::make_unique<DrawableObject>(std::move(m), programPlanet);
+        auto t = std::make_unique<TransformComposite>();
+        // 1. Orbit kolem Slunce
+        t->addTransformation(std::make_unique<DynamicRotate>(venusOrbitSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Translate>(venusOrbitRadius, 0.0f, 0.0f));
+        // 2. Rotace kolem vlastní osy
+        t->addTransformation(std::make_unique<DynamicRotate>(venusRotationSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(venusScale, venusScale, venusScale));
+        venus->getTransform().addTransformation(std::move(t));
+        venus->setTexture(venusTexture);
+        //mercury->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        venus->setModelType(2);
+        solarScene->addObject(std::move(venus));
+    }
+
+
+    // ZEMĚ - referenční planeta (365 dní oběh, 24h rotace)
+    float earthOrbitRadius = 7.5f;
+    float earthOrbitSpeed = 1.0f;  // referenční rychlost
+    float earthRotationSpeed = 3.0f;  // rychlá rotace kolem své osy
+    float earthScale = 0.48f;  // střední planeta
+    {
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
         auto earth = std::make_unique<DrawableObject>(std::move(m), programPlanet);
         auto t = std::make_unique<TransformComposite>();
+        // 1. Orbit kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(earthOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(earthOrbitRadius, 0.0f, 0.0f));
+        // 2. Rotace Země kolem vlastní osy
+        t->addTransformation(std::make_unique<DynamicRotate>(earthRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(earthScale, earthScale, earthScale));
         earth->getTransform().addTransformation(std::move(t));
-        earth->setColor(glm::vec3(0.2f, 0.6f, 1.0f));
+        earth->setTexture(earthTexture);
+        earth->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        earth->setModelType(2);
         solarScene->addObject(std::move(earth));
     }
 
-    // MOON orbiting around EARTH
-    float moonOrbitRadius = 1.5f;
-    float moonOrbitSpeed = 1.8f;
-    float moonScale = 0.18f;
+    // MĚSÍC - obíhá kolem Země (27 dní), vázaná rotace
+    float moonOrbitRadius = 1.0f;
+    float moonOrbitSpeed = 4.5f;  // rychlý oběh kolem Země
+    float moonRotationSpeed = 0.3f;  // pomalá rotace
+    float moonScale = 0.13f;  // malý měsíc (27% průměru Země)
     {
-        auto m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
         auto moon = std::make_unique<DrawableObject>(std::move(m), programPlanet);
         auto t = std::make_unique<TransformComposite>();
+        // 1. Nejdříve se musí pohybovat s Zemí kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(earthOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(earthOrbitRadius, 0.0f, 0.0f));
+        // 2. Pak obíhá kolem Země
         t->addTransformation(std::make_unique<DynamicRotate>(moonOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(moonOrbitRadius, 0.0f, 0.0f));
+        // 3. Rotace kolem vlastní osy
+        t->addTransformation(std::make_unique<DynamicRotate>(moonRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(moonScale, moonScale, moonScale));
         moon->getTransform().addTransformation(std::move(t));
-        moon->setColor(glm::vec3(0.7f, 0.7f, 0.7f));
+        moon->setTexture(moonTexture);
+        moon->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        moon->setModelType(2);
         solarScene->addObject(std::move(moon));
+    }
+
+    // MARS - rudá planeta (1.9 let oběh, 24.6h rotace)
+    float marsOrbitRadius = 10.0f;
+    float marsOrbitSpeed = 0.8f;  // pomalejší než Země
+    float marsRotationSpeed = 2.9f;  // podobná rotace jako Země
+    float marsScale = 0.25f;  // menší než Země (53% průměru)
+    {
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        auto mars = std::make_unique<DrawableObject>(std::move(m), programPlanet);
+        auto t = std::make_unique<TransformComposite>();
+        // 1. Orbit kolem Slunce
+        t->addTransformation(std::make_unique<DynamicRotate>(marsOrbitSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Translate>(marsOrbitRadius, 0.0f, 0.0f));
+        // 2. Rotace kolem vlastní osy
+        t->addTransformation(std::make_unique<DynamicRotate>(marsRotationSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(marsScale, marsScale, marsScale));
+        mars->getTransform().addTransformation(std::move(t));
+        mars->setTexture(marsTexture);
+        mars->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        mars->setModelType(2);
+        solarScene->addObject(std::move(mars));
+    }
+
+    // JUPITER - plynný obr, největší planeta (11.9 let oběh, 10h rotace)
+    float jupiterOrbitRadius = 14.0f;
+    float jupiterOrbitSpeed = 0.52f;  // pomalý oběh
+    float jupiterRotationSpeed = 5.0f;  // nejrychlejší rotace
+    float jupiterScale = 1.2f;  // největší planeta (11× průměr Země)
+    {
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        auto jupiter = std::make_unique<DrawableObject>(std::move(m), programPlanet);
+        auto t = std::make_unique<TransformComposite>();
+        // 1. Orbit kolem Slunce
+        t->addTransformation(std::make_unique<DynamicRotate>(jupiterOrbitSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Translate>(jupiterOrbitRadius, 0.0f, 0.0f));
+        // 2. Rotace kolem vlastní osy
+        t->addTransformation(std::make_unique<DynamicRotate>(jupiterRotationSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(jupiterScale, jupiterScale, jupiterScale));
+        jupiter->getTransform().addTransformation(std::move(t));
+        jupiter->setTexture(jupiterTexture);
+        jupiter->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        jupiter->setModelType(2);
+        solarScene->addObject(std::move(jupiter));
+    }
+
+
+    // SATURN - planeta s prstenci (29.5 let oběh, 10.7h rotace)
+    float saturnOrbitRadius = 18.0f;
+    float saturnOrbitSpeed = 0.38f;  // velmi pomalý oběh
+    float saturnRotationSpeed = 4.7f;  // rychlá rotace
+    float saturnScale = 1.0f;  // druhý největší (9.5× průměr Země)
+    {
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        auto saturn = std::make_unique<DrawableObject>(std::move(m), programPlanet);
+        auto t = std::make_unique<TransformComposite>();
+        // 1. Orbit kolem Slunce
+        t->addTransformation(std::make_unique<DynamicRotate>(saturnOrbitSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Translate>(saturnOrbitRadius, 0.0f, 0.0f));
+        // 2. Rotace kolem vlastní osy
+        t->addTransformation(std::make_unique<DynamicRotate>(saturnRotationSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(saturnScale, saturnScale, saturnScale));
+        saturn->getTransform().addTransformation(std::move(t));
+        saturn->setTexture(saturnTexture);
+        saturn->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        saturn->setModelType(2);
+        solarScene->addObject(std::move(saturn));
+    }
+
+
+    // URAN - modrý ledový obr (84 let oběh, 17.2h rotace)
+    float uranOrbitRadius = 22.0f;
+    float uranOrbitSpeed = 0.22f;  // velmi pomalý oběh
+    float uranRotationSpeed = 3.5f;  // rychlá rotace
+    float uranScale = 0.55f;  // střední plynný obr (4× průměr Země)
+    {
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        auto uran = std::make_unique<DrawableObject>(std::move(m), programPlanet);
+        auto t = std::make_unique<TransformComposite>();
+        // 1. Orbit kolem Slunce
+        t->addTransformation(std::make_unique<DynamicRotate>(uranOrbitSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Translate>(uranOrbitRadius, 0.0f, 0.0f));
+        // 2. Rotace kolem vlastní osy
+        t->addTransformation(std::make_unique<DynamicRotate>(uranRotationSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(uranScale, uranScale, uranScale));
+        uran->getTransform().addTransformation(std::move(t));
+        uran->setTexture(uranTexture);
+        uran->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        uran->setModelType(2);
+        solarScene->addObject(std::move(uran));
+    }
+
+
+    // NEPTUN - nejvzdálenější planeta (165 let oběh, 16h rotace)
+    float neptunOrbitRadius = 26.0f;
+    float neptunOrbitSpeed = 0.18f;  // nejpomalejší oběh
+    float neptunRotationSpeed = 3.8f;  // rychlá rotace
+    float neptunScale = 0.53f;  // podobný Uranu (3.9× průměr Země)
+    {
+        std::unique_ptr<Model> m;
+        if (sphereModelWithUV) {
+            m = Model::loadFromOBJ(planetModelPath);
+        }
+        if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
+        auto neptun = std::make_unique<DrawableObject>(std::move(m), programPlanet);
+        auto t = std::make_unique<TransformComposite>();
+        // 1. Orbit kolem Slunce
+        t->addTransformation(std::make_unique<DynamicRotate>(neptunOrbitSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Translate>(neptunOrbitRadius, 0.0f, 0.0f));
+        // 2. Rotace kolem vlastní osy
+        t->addTransformation(std::make_unique<DynamicRotate>(neptunRotationSpeed, 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(neptunScale, neptunScale, neptunScale));
+        neptun->getTransform().addTransformation(std::move(t));
+        neptun->setTexture(neptunTexture);
+        neptun->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        neptun->setModelType(2);
+        solarScene->addObject(std::move(neptun));
     }
 
     mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programPlanet));
@@ -877,7 +1121,18 @@ void Application::updateDynamicLights() {
         // 1. Přidáme statická světla (ambient, directional, bodová)
         allLights.insert(allLights.end(), staticLights.begin(), staticLights.end());
 
-        // 1a. Pro scénu sázení stromů (index 5) přidejme jasné denní osvětlení
+        // 1a. Pro planetární scénu (index 3) přidejme silné osvětlení pro viditelnost planet
+        if (activeSceneIndex == 3) {
+            allLights.push_back(LightData::createAmbient(glm::vec3(0.3f, 0.3f, 0.3f), 0.5f));
+            // Silné bodové světlo ze středu (simulace Slunce jako zdroje světla)
+            LightData sunLight(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.95f, 0.8f), 3.0f);
+            sunLight.constant = 1.0f;
+            sunLight.linear = 0.02f;
+            sunLight.quadratic = 0.001f;
+            allLights.push_back(sunLight);
+        }
+        
+        // 1b. Pro scénu sázení stromů (index 5) přidejme jasné denní osvětlení
         if (activeSceneIndex == 5) {
             allLights.push_back(LightData::createAmbient(glm::vec3(0.4f, 0.45f, 0.5f), 0.8f)); // Jasný modrý ambient
             // Silné sluneční světlo shora
@@ -888,7 +1143,7 @@ void Application::updateDynamicLights() {
             ));
         }
         
-        // 1b. Pro scénu s formulí (index 6) přidejme světlejší ambient, aby nebyla tma
+        // 1c. Pro scénu s formulí (index 6) přidejme světlejší ambient, aby nebyla tma
         if (activeSceneIndex == 6) {
             allLights.push_back(LightData::createAmbient(glm::vec3(0.2f, 0.2f, 0.2f), 0.6f));
             // a silnější konstantní směrové světlo (studiové)
@@ -896,6 +1151,17 @@ void Application::updateDynamicLights() {
                 glm::vec3(-0.2f, -1.0f, -0.15f),           // směr shora mírně dopředu
                 glm::vec3(1.0f, 0.98f, 0.95f),              // téměř bílé světlo
                 1.2f                                        // vyšší intenzita
+            ));
+        }
+        
+        // 1d. Pro arkádovou hru (index 7) jasné osvětlení pro lepší viditelnost cílů
+        if (activeSceneIndex == 7) {
+            allLights.push_back(LightData::createAmbient(glm::vec3(0.5f, 0.5f, 0.5f), 0.7f));
+            // Silné světlo shora
+            allLights.push_back(LightData::createDirectional(
+                glm::vec3(0.0f, -1.0f, 0.0f),              // Přímo shora
+                glm::vec3(1.0f, 1.0f, 1.0f),               // Bílé světlo
+                1.5f                                        // Vysoká intenzita
             ));
         }
 
@@ -934,7 +1200,7 @@ void Application::handleMouseClick(double xpos, double ypos) {
     // Načtení ID a pozice ve světových souřadnicích
     GLbyte color[4];
     GLfloat depth;
-    GLuint index;
+    GLubyte stencilByte;  // 8-bit stencil value
     
     GLint x = static_cast<GLint>(xpos);
     GLint y = static_cast<GLint>(ypos);
@@ -945,10 +1211,27 @@ void Application::handleMouseClick(double xpos, double ypos) {
     
     glReadPixels(x, newy, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, color);
     glReadPixels(x, newy, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-    glReadPixels(x, newy, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &index);
+    glReadPixels(x, newy, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, &stencilByte);
+    unsigned int index = static_cast<unsigned int>(stencilByte);
     
     printf("Clicked on pixel %d, %d, color %02hhx%02hhx%02hhx%02hhx, depth %f, stencil index %u\n", 
            x, y, color[0], color[1], color[2], color[3], depth, index);
+    
+    // Speciální zpracování pro arkádovou hru (scéna 7)
+    if (activeSceneIndex == 7 && index != 0) {
+        int points = arcadeGame.hitTarget(index);
+        if (points > 0) {
+            printf("*** ZASAH! +%d bodu! Celkove skore: %d ***\n", points, arcadeGame.getScore());
+            
+            // Vizuální feedback - objekt zmizí (bude neaktivní)
+            DrawableObject* obj = scenes[activeSceneIndex]->getObjectByID(index);
+            if (obj) {
+                // Můžeme objekt odstranit nebo jen změnit barvu
+                obj->setColor(glm::vec3(0.2f, 0.2f, 0.2f)); // Ztmavení
+            }
+        }
+        return;
+    }
     
     // Clear previous selection
     scenes[activeSceneIndex]->clearSelection();
@@ -1041,4 +1324,128 @@ void Application::plantTreeAtClick(double xpos, double ypos) {
     scenes[activeSceneIndex]->addObject(std::move(treeObj));
     
     printf("Tree planted successfully!\n");
+}
+
+void Application::createArcadeScene() {
+    // Reset object IDs for arcade scene to ensure they fit in 8-bit stencil buffer (0-255)
+    nextObjectID = 1;
+    
+    auto arcadeScene = std::make_unique<Scene>();
+
+    // Shadery pro arkádu
+    Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsAdvanced = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
+    auto programTargets = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsAdvanced});
+
+    // Shader pro pozadí/zem
+    Shader* vsBg = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsBg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
+    auto programBg = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsBg, fsBg});
+
+    // Textura pro pozadí
+    auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
+
+    // Vytvoření pozadí/země
+    {
+        auto m = std::make_unique<Model>(plain, plainDataSize, 6);
+        auto ground = std::make_unique<DrawableObject>(std::move(m), programBg);
+        ground->setTexture(groundTexture);
+        ground->setColor(glm::vec3(0.2f, 0.3f, 0.15f));
+        ground->setMaterial(0.2f, 1.0f, 0.05f, 8.0f);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(0.0f, -2.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(30.0f, 1.0f, 30.0f));
+        ground->getTransform().addTransformation(std::move(t));
+        ground->setModelType(2);
+        arcadeScene->addObject(std::move(ground));
+    }
+
+    // Vytvoření cílů s náhodnými cestami
+    std::vector<Target::TargetType> targetTypes = {
+        Target::TargetType::SPHERE,
+        Target::TargetType::SPHERE,
+        Target::TargetType::SPHERE,
+        Target::TargetType::CUBE,
+        Target::TargetType::CUBE,
+        Target::TargetType::GIFT
+    };
+
+    for (size_t i = 0; i < targetTypes.size(); ++i) {
+        Target::TargetType type = targetTypes[i];
+        std::unique_ptr<Model> model;
+        glm::vec3 color;
+        float scale = 0.3f;
+
+        // Výběr modelu podle typu cíle
+        switch (type) {
+            case Target::TargetType::SPHERE:
+                model = std::make_unique<Model>(sphere, sphereDataSize, 6);
+                color = glm::vec3(0.2f, 0.6f, 1.0f); // Modrá
+                scale = 0.3f;
+                break;
+            case Target::TargetType::CUBE:
+                if (auto m = Model::loadFromOBJ("assets/cube.obj")) {
+                    model = std::move(m);
+                } else {
+                    model = std::make_unique<Model>(sphere, sphereDataSize, 6); // Fallback
+                }
+                color = glm::vec3(1.0f, 0.8f, 0.2f); // Žlutá
+                scale = 0.4f;
+                break;
+            case Target::TargetType::GIFT:
+                model = std::make_unique<Model>(gift, giftDataSize, 6);
+                color = glm::vec3(1.0f, 0.2f, 0.3f); // Červená
+                scale = 0.002f;
+                break;
+        }
+
+        auto target = std::make_unique<Target>(std::move(model), programTargets, type);
+        target->setColor(color);
+        target->setModelType(2);
+        target->setMaterial(0.2f, 1.0f, 0.6f, 32.0f);
+        // ID bude nastaveno automaticky v addScene()
+
+        // Generování náhodné cesty (lomená čára s 3-5 body)
+        int numPoints = 3 + (i % 3); // 3-5 bodů
+        auto path = arcadeGame.generateRandomPath(numPoints, -8.0f, 8.0f, -1.0f, 2.0f, -8.0f, 8.0f);
+        float duration = arcadeGame.getRandomDuration(3.0f, 8.0f);
+
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<LinePathTransform>(path, duration, true));
+        t->addTransformation(std::make_unique<Scale>(scale, scale, scale));
+        target->getTransform().addTransformation(std::move(t));
+
+        // Přidáme do scény (zatím bez registrace do hry)
+        arcadeScene->addObject(std::move(target));
+    }
+
+    // Nastavení osvětlení pro arkádu - jasné denní světlo
+    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programTargets));
+    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programBg));
+    mainLight->notifyObservers();
+
+    if (camera) {
+        int fbWidth = 0, fbHeight = 0;
+        glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
+        float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+        programTargets->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        programBg->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programTargets));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programBg));
+    }
+
+    addScene(std::move(arcadeScene));
+    
+    // Teď registrujeme cíle do hry (po addScene, kdy mají správná ID)
+    // Pozadí je index 0, cíle jsou indexy 1-6
+    for (size_t i = 1; i < scenes.back()->getObjects().size(); ++i) {
+        DrawableObject* obj = scenes.back()->getObjects()[i].get();
+        Target* target = dynamic_cast<Target*>(obj);
+        if (target) {
+            arcadeGame.addTarget(target);
+            printf("Registered target with ID %u, points %d\n", target->getID(), target->getPointValue());
+        }
+    }
+    
+    printf("Arcade scene created with targets!\n");
 }

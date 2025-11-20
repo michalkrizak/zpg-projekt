@@ -5,8 +5,16 @@ in vec2 fragTexCoord;
 out vec4 outColor;
 
 uniform vec3 objectColor;
+uniform int useTexture;
+uniform sampler2D textureSampler;
 
 void main() {
-    // Emissive object - glows with its own color
-    outColor = vec4(objectColor, 1.0);
+    // Emissive object - glows with its own color or texture
+    vec3 color;
+    if (useTexture == 1) {
+        color = texture(textureSampler, fragTexCoord).rgb;
+    } else {
+        color = objectColor;
+    }
+    outColor = vec4(color, 1.0);
 }
