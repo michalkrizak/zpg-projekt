@@ -2,10 +2,10 @@
 #include <glm/glm.hpp>
 
 enum class LightType {
-    POINT,        // Bodov� sv�tlo
-    DIRECTIONAL,  // Sm�rov� sv�tlo (slunce, m�s�c)
+    POINT,        // Bodove svetlo
+    DIRECTIONAL,  // Smerove svetlo (slunce, mesic)
     SPOT,         // Reflektor (baterka)
-    AMBIENT       // Ambientn� osv�tlen�
+    AMBIENT       // Ambientni osvetleni
 };
 
 struct LightData {
@@ -15,18 +15,18 @@ struct LightData {
     glm::vec3 color;
     float intensity;
 
-    // Pro SPOT sv�tlo (baterka)
-    float cutOff;            // Vnit�n� �hel ku�ele (v radi�nech)
-    float outerCutOff;       // Vn�j�� �hel ku�ele (v radi�nech)
+    // Pro SPOT svetlo (baterka)
+    float cutOff;            // Vnitrni uhel (v radiinech)
+    float outerCutOff;       // Vnejsi uhel (v radiinech)
 
-    // Attenuation (�tlum) pro POINT a SPOT
+    // Attenuation (utlum) pro POINT a SPOT
     float constant;
     float linear;
     float quadratic;
 
     bool enabled;            // Zapnuto/vypnuto
 
-    // Konstruktor pro bodov� sv�tlo
+    // Konstruktor pro bodove svetlo
     LightData(const glm::vec3& pos, const glm::vec3& col, float inten = 1.0f)
         : type(LightType::POINT)
         , position(pos)
@@ -41,7 +41,7 @@ struct LightData {
         , enabled(true)
     {}
 
-    // Konstruktor pro sm�rov� sv�tlo
+    // Konstruktor pro smerove svetlo
     static LightData createDirectional(const glm::vec3& dir, const glm::vec3& col, float inten = 1.0f) {
         LightData light(glm::vec3(0.0f), col, inten);
         light.type = LightType::DIRECTIONAL;
@@ -63,7 +63,7 @@ struct LightData {
         return light;
     }
 
-    // Konstruktor pro ambientn� sv�tlo
+    // Konstruktor pro ambientni svetlo
     static LightData createAmbient(const glm::vec3& col, float inten = 0.1f) {
         LightData light(glm::vec3(0.0f), col, inten);
         light.type = LightType::AMBIENT;

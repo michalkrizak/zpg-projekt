@@ -11,14 +11,14 @@ uniform mat4 projection;
 uniform mat3 normalMatrix;
 
 
-uniform float w = 500.0; // Standardni hodnota. Zkuste v aplikaci nastavit na: 500.0
+uniform float w = 500.0;
 
 
 mat4 customTransform = mat4(
-    1.0, 0.0, 0.0, 0.0,  // prvni sloupec
-    0.0, 1.0, 0.0, 0.0,  // druhy sloupec
-    0.0, 0.0, 1.0, 0.0,  // treti sloupec
-    0.0, 0.0, 0.0, 20.0   // ctvrty sloupec - zkuste: 20.0 misto 1.0
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0
 );
 
 void main(){

@@ -164,6 +164,7 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="LightObserver.h" />
     <ClInclude Include="LightTypes.h" />
+    <ClInclude Include="Target.h" />
     <ClInclude Include="TransformComponent.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="CameraObserver.h" />

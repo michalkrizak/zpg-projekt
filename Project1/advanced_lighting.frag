@@ -6,7 +6,7 @@ out vec4 outColor;
 
 #define MAX_LIGHTS 32
 
-// Typy sv�tel
+// Typy svetel
 #define LIGHT_POINT 0
 #define LIGHT_DIRECTIONAL 1
 #define LIGHT_SPOT 2

@@ -12,5 +12,5 @@ public:
     }
 
 private:
-    float sx, sy, sz;   // škálovací faktory
+    float sx, sy, sz;
 };

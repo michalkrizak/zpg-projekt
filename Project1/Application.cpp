@@ -149,12 +149,7 @@ Application::Application(int width, int height, const std::string& title)
         glm::vec3(0.2f, 0.2f, 0.18f)
     );
 
-     /*mainLight = std::make_shared<Light>(
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(1.0f, 1.0f, 1.08f)
-    );*/
-    
-    // Inicializace různých typů osvětlení
+
     // 1. Ambientní osvětlení (tmavé, noční prostředí)
     staticLights.push_back(LightData::createAmbient(glm::vec3(0.1f, 0.1f, 0.15f), 0.05f));
     
@@ -737,9 +732,8 @@ void Application::createSolarScene() {
     auto moonTexture = std::make_shared<Texture>("assets/textures/planets/moon.jpg");
     auto marsTexture = std::make_shared<Texture>("assets/textures/planets/mars.jpg");
 
-    // POZN.: Built-in sphere nemá UV koordináty, použijeme cube.obj jako náhradu
-    // V budoucnu můžete nahradit správným sphere.obj s UV
-    std::string planetModelPath = "assets/sphereUV.obj";  // Dočasně použijeme cube místo sphere
+
+    std::string planetModelPath = "assets/sphereUV.obj";
     auto sphereModelWithUV = Model::loadFromOBJ(planetModelPath);
     if (!sphereModelWithUV) {
         std::cerr << "Warning: Could not load " << planetModelPath << ", planets will not have textures" << std::endl;
@@ -747,7 +741,7 @@ void Application::createSolarScene() {
         std::cout << "Successfully loaded planet model with UV coordinates" << std::endl;
     }
 
-    // SLUNCE - stacionární ve středu, rotuje kolem své osy
+    // SLUNCE
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -758,7 +752,7 @@ void Application::createSolarScene() {
         }
         auto sun = std::make_unique<DrawableObject>(std::move(m), programSun);
         auto t = std::make_unique<TransformComposite>();
-        // Rotace Slunce kolem své osy (velmi pomalá - 27 dní)
+        // Rotace Slunce kolem své osy
         t->addTransformation(std::make_unique<DynamicRotate>(0.05f, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(2.0f, 2.0f, 2.0f));
         sun->getTransform().addTransformation(std::move(t));
@@ -768,11 +762,11 @@ void Application::createSolarScene() {
         solarScene->addObject(std::move(sun));
     }
 
-    // MERKUR - nejblíže Slunci, nejrychlejší oběh (88 dní), velmi pomalá rotace (59 dní)
+    // MERKUR
     float mercuryOrbitRadius = 3.5f;
-    float mercuryOrbitSpeed = 1.6f;  // nejrychlejší orbitální rychlost
-    float mercuryRotationSpeed = 0.15f;  // velmi pomalá rotace
-    float mercuryScale = 0.18f;  // nejmenší planeta
+    float mercuryOrbitSpeed = 1.6f;
+    float mercuryRotationSpeed = 0.15f;
+    float mercuryScale = 0.18f;
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -789,17 +783,18 @@ void Application::createSolarScene() {
         t->addTransformation(std::make_unique<Scale>(mercuryScale, mercuryScale, mercuryScale));
         mercury->getTransform().addTransformation(std::move(t));
         mercury->setTexture(mercuryTexture);
-        //mercury->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        mercury->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         mercury->setModelType(2);
+        mercury->setMaterial(0.1f, 0.60f, 0.0f, 0.0f);
         solarScene->addObject(std::move(mercury));
     }
 
 
-    // VENUŠE - podobná velikost jako Země (225 dní), zpětná rotace (243 dní)
+    // VENUŠE
     float venusOrbitRadius = 5.5f;
-    float venusOrbitSpeed = 1.1f;  // rychlejší než Země
-    float venusRotationSpeed = -0.1f;  // velmi pomalá zpětná rotace (záporná)
-    float venusScale = 0.45f;  // téměř jako Země
+    float venusOrbitSpeed = 1.1f; 
+    float venusRotationSpeed = -0.1f;
+    float venusScale = 0.45f;
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -816,17 +811,18 @@ void Application::createSolarScene() {
         t->addTransformation(std::make_unique<Scale>(venusScale, venusScale, venusScale));
         venus->getTransform().addTransformation(std::move(t));
         venus->setTexture(venusTexture);
-        //mercury->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        venus->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         venus->setModelType(2);
+        venus->setMaterial(0.1f, 0.60f, 0.0f, 0.0f);
         solarScene->addObject(std::move(venus));
     }
 
 
-    // ZEMĚ - referenční planeta (365 dní oběh, 24h rotace)
+    // ZEMĚ
     float earthOrbitRadius = 7.5f;
-    float earthOrbitSpeed = 1.0f;  // referenční rychlost
-    float earthRotationSpeed = 3.0f;  // rychlá rotace kolem své osy
-    float earthScale = 0.48f;  // střední planeta
+    float earthOrbitSpeed = 1.0f;
+    float earthRotationSpeed = 3.0f;
+    float earthScale = 0.48f;
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -845,14 +841,15 @@ void Application::createSolarScene() {
         earth->setTexture(earthTexture);
         earth->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         earth->setModelType(2);
+        earth->setMaterial(0.1f, 0.60f, 0.0f, 0.0f);
         solarScene->addObject(std::move(earth));
     }
 
-    // MĚSÍC - obíhá kolem Země (27 dní), vázaná rotace
+    // MĚSÍC 
     float moonOrbitRadius = 1.0f;
-    float moonOrbitSpeed = 4.5f;  // rychlý oběh kolem Země
-    float moonRotationSpeed = 0.3f;  // pomalá rotace
-    float moonScale = 0.13f;  // malý měsíc (27% průměru Země)
+    float moonOrbitSpeed = 4.5f;
+    float moonRotationSpeed = 0.3f;
+    float moonScale = 0.13f;
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -874,14 +871,15 @@ void Application::createSolarScene() {
         moon->setTexture(moonTexture);
         moon->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         moon->setModelType(2);
+        moon->setMaterial(0.1f, 0.60f, 0.0f, 0.0f);
         solarScene->addObject(std::move(moon));
     }
 
-    // MARS - rudá planeta (1.9 let oběh, 24.6h rotace)
+    // MARS
     float marsOrbitRadius = 10.0f;
-    float marsOrbitSpeed = 0.8f;  // pomalejší než Země
-    float marsRotationSpeed = 2.9f;  // podobná rotace jako Země
-    float marsScale = 0.25f;  // menší než Země (53% průměru)
+    float marsOrbitSpeed = 0.8f;  
+    float marsRotationSpeed = 2.9f;
+    float marsScale = 0.25f;
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -900,14 +898,15 @@ void Application::createSolarScene() {
         mars->setTexture(marsTexture);
         mars->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         mars->setModelType(2);
+        mars->setMaterial(0.1f, 0.60f, 0.0f, 0.0f);
         solarScene->addObject(std::move(mars));
     }
 
-    // JUPITER - plynný obr, největší planeta (11.9 let oběh, 10h rotace)
+    // JUPITER
     float jupiterOrbitRadius = 14.0f;
-    float jupiterOrbitSpeed = 0.52f;  // pomalý oběh
-    float jupiterRotationSpeed = 5.0f;  // nejrychlejší rotace
-    float jupiterScale = 1.2f;  // největší planeta (11× průměr Země)
+    float jupiterOrbitSpeed = 0.52f; 
+    float jupiterRotationSpeed = 5.0f; 
+    float jupiterScale = 1.2f; 
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -926,15 +925,16 @@ void Application::createSolarScene() {
         jupiter->setTexture(jupiterTexture);
         jupiter->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         jupiter->setModelType(2);
+        jupiter->setMaterial(0.1f, 0.60f, 0.0f, 0.0f);
         solarScene->addObject(std::move(jupiter));
     }
 
 
-    // SATURN - planeta s prstenci (29.5 let oběh, 10.7h rotace)
+    // SATURN
     float saturnOrbitRadius = 18.0f;
-    float saturnOrbitSpeed = 0.38f;  // velmi pomalý oběh
-    float saturnRotationSpeed = 4.7f;  // rychlá rotace
-    float saturnScale = 1.0f;  // druhý největší (9.5× průměr Země)
+    float saturnOrbitSpeed = 0.38f;
+    float saturnRotationSpeed = 4.7f;
+    float saturnScale = 1.0f; 
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -953,15 +953,16 @@ void Application::createSolarScene() {
         saturn->setTexture(saturnTexture);
         saturn->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         saturn->setModelType(2);
+        saturn->setMaterial(0.1f, 0.60f, 0.0f, 0.0f);
         solarScene->addObject(std::move(saturn));
     }
 
 
-    // URAN - modrý ledový obr (84 let oběh, 17.2h rotace)
+    // URAN
     float uranOrbitRadius = 22.0f;
-    float uranOrbitSpeed = 0.22f;  // velmi pomalý oběh
-    float uranRotationSpeed = 3.5f;  // rychlá rotace
-    float uranScale = 0.55f;  // střední plynný obr (4× průměr Země)
+    float uranOrbitSpeed = 0.22f;
+    float uranRotationSpeed = 3.5f;
+    float uranScale = 0.55f;
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -980,15 +981,16 @@ void Application::createSolarScene() {
         uran->setTexture(uranTexture);
         uran->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         uran->setModelType(2);
+        uran->setMaterial(0.1f, 0.60f, 0.0f, 0.0f);
         solarScene->addObject(std::move(uran));
     }
 
 
-    // NEPTUN - nejvzdálenější planeta (165 let oběh, 16h rotace)
+    // NEPTU - nejvzdálenější planeta (165 let oběh, 16h rotace)
     float neptunOrbitRadius = 26.0f;
-    float neptunOrbitSpeed = 0.18f;  // nejpomalejší oběh
-    float neptunRotationSpeed = 3.8f;  // rychlá rotace
-    float neptunScale = 0.53f;  // podobný Uranu (3.9× průměr Země)
+    float neptunOrbitSpeed = 0.18f;
+    float neptunRotationSpeed = 3.8f;
+    float neptunScale = 0.53f;
     {
         std::unique_ptr<Model> m;
         if (sphereModelWithUV) {
@@ -1007,11 +1009,17 @@ void Application::createSolarScene() {
         neptun->setTexture(neptunTexture);
         neptun->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         neptun->setModelType(2);
+        neptun->setMaterial(0.1f, 0.60f, 0.0f, 10.0f);
         solarScene->addObject(std::move(neptun));
     }
 
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programPlanet));
-    mainLight->notifyObservers();
+    
+    auto sunLight = std::make_shared<Light>(
+        glm::vec3(0.0f, 0.0f, 0.0f),      
+        glm::vec3(4.0f, 3.8f, 3.4f)   
+    );
+    sunLight->addObserver(std::static_pointer_cast<ILightObserver>(programPlanet));
+    sunLight->notifyObservers();
 
     if (camera) {
         int fbWidth = 0, fbHeight = 0;
@@ -1031,16 +1039,13 @@ void Application::createSolarScene() {
 void Application::createTreePlantingScene() {
     auto plantingScene = std::make_unique<Scene>();
 
-    // Shader programs - use advanced lighting for everything
     Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
     Shader* fsAdvanced = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
     auto programTrees = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsAdvanced});
     auto programGround = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsAdvanced});
 
-    // Load grass texture for terrain
     auto grassTexture = std::make_shared<Texture>("assets/textures/grass.png");
 
-    // Try to load terrain model, fallback to plain if not available
     auto terrainModel = Model::loadFromOBJ("assets/textures/teren/teren.obj");
     if (terrainModel) {
         auto ground = std::make_unique<DrawableObject>(std::move(terrainModel), programGround);
@@ -1214,8 +1219,8 @@ void Application::handleMouseClick(double xpos, double ypos) {
     glReadPixels(x, newy, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, &stencilByte);
     unsigned int index = static_cast<unsigned int>(stencilByte);
     
-    printf("Clicked on pixel %d, %d, color %02hhx%02hhx%02hhx%02hhx, depth %f, stencil index %u\n", 
-           x, y, color[0], color[1], color[2], color[3], depth, index);
+    //printf("Clicked on pixel %d, %d, color %02hhx%02hhx%02hhx%02hhx, depth %f, stencil index %u\n", x, y, color[0], color[1], color[2], color[3], depth, index);
+           
     
     // Speciální zpracování pro arkádovou hru (scéna 7)
     if (activeSceneIndex == 7 && index != 0) {
@@ -1395,7 +1400,7 @@ void Application::createArcadeScene() {
             case Target::TargetType::GIFT:
                 model = std::make_unique<Model>(gift, giftDataSize, 6);
                 color = glm::vec3(1.0f, 0.2f, 0.3f); // Červená
-                scale = 0.002f;
+                scale = 1.0f;
                 break;
         }
 

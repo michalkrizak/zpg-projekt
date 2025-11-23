@@ -226,6 +226,5 @@ std::unique_ptr<Model> Model::loadFromOBJ(const std::string& path) {
     }
 
     // Build Model from the interleaved vertex data with UV coordinates
-    // Format: pos(3) + normal(3) + texcoord(2) = 8 floats per vertex
     return std::make_unique<Model>(out.data(), out.size() * sizeof(float), 8);
 }

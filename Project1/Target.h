@@ -1,10 +1,7 @@
 #pragma once
 #include "DrawableObject.h"
 
-/**
- * Herní cíl pro arkádovou hru
- * Rozšiřuje DrawableObject o informace o typu cíle a bodové hodnotě
- */
+
 class Target : public DrawableObject {
 public:
     enum class TargetType {

@@ -12,8 +12,6 @@ public:
     void bindModel() const;
     int getCount() const;
 
-    // Loads a simple OBJ file (supports v, vn, f with triangulation; vt/materials ignored)
-    // Returns nullptr on failure. Vertex format: position (3) + normal (3) = 6 floats per vertex.
     static std::unique_ptr<Model> loadFromOBJ(const std::string& path);
 
 private:

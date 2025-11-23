@@ -3,17 +3,10 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 
-/**
- * Transformace pro pohyb po lomené čáře (úsečce)
- * Objekt se pohybuje lineárně mezi body zadanými v konstruktoru
- */
+
 class LinePathTransform : public TransformComponent {
 public:
-    /**
-     * @param points Seznam bodů definujících lomenou čáru
-     * @param duration Doba v sekundách na projetí celé cesty
-     * @param loop Zda se má cesta opakovat (true) nebo zastavit na konci (false)
-     */
+
     LinePathTransform(const std::vector<glm::vec3>& points, float duration, bool loop = true)
         : points(points), duration(duration), loop(loop), startTime(static_cast<float>(glfwGetTime())) {
         if (points.size() < 2) {
@@ -57,9 +50,7 @@ private:
     bool loop;
     float startTime;
 
-    /**
-     * Interpolace pozice na lomené čáře podle normalizovaného času t (0.0 - 1.0)
-     */
+
     glm::vec3 interpolate(float t) const {
         int numSegments = static_cast<int>(points.size()) - 1;
         if (numSegments < 1) return points[0];
