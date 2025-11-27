@@ -36,6 +36,8 @@ uniform int numLights;
 uniform vec3 viewPos;
 uniform vec3 objectColor;
 
+//prepsat na hodnoty ze vzorce (phong)
+
 // Material coefficients from lighting model
 uniform float ra;  // ambient coefficient
 uniform float rd;  // diffuse coefficient
