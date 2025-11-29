@@ -158,6 +158,8 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BezierCurveTransform.h" />
+    <ClInclude Include="BezierSplineTransform.h" />
     <ClInclude Include="DynamicLight.h" />
     <ClInclude Include="Firefly.h" />
     <ClInclude Include="Flashlight.h" />

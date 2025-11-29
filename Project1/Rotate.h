@@ -1,8 +1,8 @@
 #pragma once
-#include "AbstractTransformation.h"
+#include "TransformComponent.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-class Rotate : public AbstractTransformation {
+class Rotate : public TransformComponent {
 public:
     Rotate(float angle, float x, float y, float z)
         : angle(angle), axis(x, y, z) {}

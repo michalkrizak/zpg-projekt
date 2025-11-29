@@ -9,6 +9,7 @@
 #include "DrawableObject.h"
 #include "Translate.h"
 #include "Scale.h"
+#include "Rotate.h"
 #include "DynamicRotate.h"
 #include "Light.h"
 #include "DynamicLight.h"
@@ -21,6 +22,8 @@
 #include "sphere.h"
 #include "gift.h"
 #include "LinePathTransform.h"
+#include "BezierCurveTransform.h"
+#include "BezierSplineTransform.h"
 #include "Target.h"
 
 static Application* g_app = nullptr;
@@ -38,14 +41,19 @@ static void mouseButtonCallback(GLFWwindow* window, int button, int action, int 
             g_rightMouseDown = false;
         }
     }
-    // Left mouse button for tree planting in scene 5 (tree planting scene)
+    // Left mouse button for tree planting in scene 5, Bezier points in scene 6
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
         // Scene 5 is tree planting scene - use special handler
         if (g_app->getActiveSceneIndex() == 5) {
             g_app->plantTreeAtClick(xpos, ypos);
-        } else {
+        } 
+        // Scene 6 is formula scene - add Bezier control points
+        else if (g_app->getActiveSceneIndex() == 6) {
+            g_app->addBezierControlPoint(xpos, ypos);
+        }
+        else {
             g_app->handleMouseClick(xpos, ypos);
         }
     }
@@ -122,6 +130,22 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
                 float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
                 cam->notifyObservers(aspect);
                 printf("FOV set to 130 degrees\n");
+            }
+            break;
+        
+        // Create custom Bezier path - C key (only in formula scene)
+        case GLFW_KEY_C:
+            if (g_app->getActiveSceneIndex() == 6) {
+                g_app->createCustomBezierFormula();
+            }
+            break;
+        
+        // Clear Bezier control points - X key (only in formula scene)
+        case GLFW_KEY_X:
+            if (g_app->getActiveSceneIndex() == 6) {
+                g_app->clearBezierControlPoints();
+                printf("\n*** All Bezier control points cleared! ***\n");
+                printf("Click in the scene to add new points.\n\n");
             }
             break;
         }
@@ -457,25 +481,51 @@ void Application::createFormulaScene() {
     auto program = std::make_shared<ShaderProgram>(std::vector<Shader*>{vs, fs});
 
     // Načteme textury (pokud existují, jinak použijeme pouze barvy)
-    auto formulaTexture = std::make_shared<Texture>("assets/textures/shrek.png");
-    auto houseTexture = std::make_shared<Texture>("assets/textures/skydome.png");
-    auto cubeTexture = std::make_shared<Texture>("assets/textures/metal.jpg");
+    auto formulaTexture = std::make_shared<Texture>("assets/textures/shaded.png");
+    auto tungTexture = std::make_shared<Texture>("assets/textures/tung.png");
+    auto treeTexture = std::make_shared<Texture>("assets/textures/tree1.png");
     auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
+    auto bubakTexture = std::make_shared<Texture>("assets/textures/bubak.png");
 
-    // Try loading the Formula 1 OBJ
-    auto model = Model::loadFromOBJ("assets/formula1.obj");
+    // Try loading the Formula 1 OBJ with Bezier spline path
+    auto model = Model::loadFromOBJ("assets/base.obj");
     if (model) {
         auto obj = std::make_unique<DrawableObject>(std::move(model), program);
         obj->setTexture(formulaTexture); // Přidána textura
         auto t = std::make_unique<TransformComposite>();
-        // Adjust transforms to fit scene (scale down and place on ground)
-        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, -2.0f));
-        t->addTransformation(std::make_unique<Scale>(0.02f, 0.02f, 0.02f));
+
+        std::vector<glm::vec3> splinePoints = {
+            glm::vec3(-6.0f, -1.0f, -6.0f), 
+            glm::vec3(-6.0f, -1.0f, -3.0f),  
+            glm::vec3(-5.0f, -1.0f, -1.0f), 
+            glm::vec3(-2.0f, -1.0f, -2.0f), 
+
+            glm::vec3(0.0f,  -1.0f, -3.0f),   
+            glm::vec3(2.0f,  -1.0f, -5.0f),    
+            glm::vec3(5.0f,  -1.0f, -4.0f),  
+
+            glm::vec3(6.0f,  -1.0f, -2.0f),    
+            glm::vec3(5.0f,  -1.0f,  0.0f),    
+            glm::vec3(-2.0f, -1.0f,  1.0f),  
+
+            glm::vec3(-5.0f, -1.0f,  2.0f),      
+            glm::vec3(-5.0f, -1.0f,  6.0f),      
+            glm::vec3(0.0f,  -1.0f,  6.0f),    
+
+            glm::vec3(4.0f,  -1.0f,  5.0f),   
+            glm::vec3(-4.0f,  -1.0f,  -14.0f),   
+            glm::vec3(-6.0f, -1.0f, -6.0f)      
+        };
+        
+        t->addTransformation(std::make_unique<BezierSplineTransform>(splinePoints, 20.0f, true, true));
+
+        //t->addTransformation(std::make_unique<Rotate>(glm::radians(90.0f), 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(0.6f, 0.6f, 0.6f));
         obj->getTransform().addTransformation(std::move(t));
         obj->setModelType(2); // Phong shading
-        obj->setColor(glm::vec3(0.9f, 0.9f, 0.9f));
-        // Material: shiny car body (low ambient, full diffuse, high specular, high shininess)
-        obj->setMaterial(0.05f, 1.0f, 0.8f, 64.0f);
+        obj->setColor(glm::vec3(0.9f, 0.1f, 0.1f)); 
+
+        obj->setMaterial(0.2f, 0.8f, 0.9f, 128.0f);
         scene->addObject(std::move(obj));
     }
     else {
@@ -484,9 +534,9 @@ void Application::createFormulaScene() {
 
     // Load additional assets and place them around with textures
     // House with wood texture
-    if (auto m = Model::loadFromOBJ("assets/house.obj")) {
+    if (auto m = Model::loadFromOBJ("assets/tung.obj")) {
         auto obj = std::make_unique<DrawableObject>(std::move(m), program);
-        obj->setTexture(houseTexture); // Dřevěná textura
+        obj->setTexture(tungTexture); // Dřevěná textura
         auto t = std::make_unique<TransformComposite>();
         t->addTransformation(std::make_unique<Translate>(-3.5f, -1.0f, -4.0f));
         t->addTransformation(std::make_unique<Scale>(0.5f, 0.5f, 0.5f));
@@ -500,9 +550,9 @@ void Application::createFormulaScene() {
     }
 
     // Cube with metal texture
-    if (auto m = Model::loadFromOBJ("assets/cube.obj")) {
+    if (auto m = Model::loadFromOBJ("assets/tree1.obj")) {
         auto obj = std::make_unique<DrawableObject>(std::move(m), program);
-        obj->setTexture(cubeTexture); // Kovová textura
+        obj->setTexture(treeTexture); // Kovová textura
         auto t = std::make_unique<TransformComposite>();
         t->addTransformation(std::make_unique<Translate>(3.0f, -1.0f, -3.0f));
         t->addTransformation(std::make_unique<Scale>(0.7f, 0.7f, 0.7f));
@@ -512,22 +562,23 @@ void Application::createFormulaScene() {
         scene->addObject(std::move(obj));
     }
     else {
-        std::cerr << "Formula scene: failed to load assets/cube.obj" << std::endl;
+        std::cerr << "Formula scene: failed to load assets/tree1.obj" << std::endl;
     }
 
     // Square without texture (keep original)
-    if (auto m = Model::loadFromOBJ("assets/square.obj")) {
+    if (auto m = Model::loadFromOBJ("assets/bubak.obj")) {
         auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+        obj->setTexture(bubakTexture);
         auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Translate>(0.0f, -0.5f, 2.5f));
-        t->addTransformation(std::make_unique<Scale>(2.0f, 0.1f, 2.0f));
+        t->addTransformation(std::make_unique<Translate>(-1.0f, -1.0f, 2.5f));
+        t->addTransformation(std::make_unique<Scale>(1.0f, 1.0f, 1.0f));
         obj->getTransform().addTransformation(std::move(t));
         obj->setModelType(2);
         obj->setColor(glm::vec3(0.2f, 0.2f, 0.25f));
         scene->addObject(std::move(obj));
     }
     else {
-        std::cerr << "Formula scene: failed to load assets/square.obj" << std::endl;
+        std::cerr << "Formula scene: failed to load assets/buabk.obj" << std::endl;
     }
 
     // Optional: simple ground under the model for reference with texture
@@ -1364,6 +1415,135 @@ void Application::plantTreeAtClick(double xpos, double ypos) {
     scenes[activeSceneIndex]->addObject(std::move(treeObj));
     
     printf("Tree planted successfully!\n");
+}
+
+void Application::addBezierControlPoint(double xpos, double ypos) {
+    // Only works in formula scene (index 6)
+    if (activeSceneIndex != 6 || !camera) return;
+
+    int fbWidth = 0, fbHeight = 0;
+    glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
+    
+    GLint x = static_cast<GLint>(xpos);
+    GLint y = static_cast<GLint>(ypos);
+    int newy = fbHeight - y;
+    
+    // Read depth at click position
+    GLfloat depth;
+    glReadPixels(x, newy, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+    
+    // Use unProject to get world position
+    glm::vec3 screenPos = glm::vec3(x, newy, depth);
+    glm::mat4 view = camera->getViewMatrix();
+    float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+    glm::mat4 projection = camera->getProjectionMatrix(aspect);
+    glm::vec4 viewport = glm::vec4(0, 0, fbWidth, fbHeight);
+    glm::vec3 worldPos = glm::unProject(screenPos, view, projection, viewport);
+    
+    // Add control point
+    bezierControlPoints.push_back(worldPos);
+    printf("\n=== BEZIER CONTROL POINT ADDED ===\n");
+    printf("Point %zu: [%.2f, %.2f, %.2f]\n", 
+           bezierControlPoints.size(), worldPos.x, worldPos.y, worldPos.z);
+    
+    // Pokud máme alespoň 4 body, můžeme vytvořit/aktualizovat křivku
+    if (bezierControlPoints.size() >= 4) {
+        int numSegments = (bezierControlPoints.size() - 1) / 3;
+        printf(">>> You can now create Bezier spline with %d segment(s)\n", numSegments);
+        printf(">>> To use YOUR points, you need to:\n");
+        printf("    2. Press 'C' to create a NEW formula with your custom path\n");
+        
+        // Po každých 4 bodech vytváříme nový segment
+        if ((bezierControlPoints.size() - 1) % 3 == 0) {
+            printf(">>> SEGMENT %d COMPLETE! Click 3 more points for next segment.\n", numSegments);
+        }
+    } else {
+        printf(">>> Need %d more point(s) to create first segment (minimum 4 points total)\n", 
+               4 - (int)bezierControlPoints.size());
+    }
+    printf("==================================\n\n");
+}
+
+void Application::createCustomBezierFormula() {
+    // Check if we have enough points
+    if (bezierControlPoints.size() < 4) {
+        printf("\n*** ERROR: Need at least 4 control points! ***\n");
+        printf("Current points: %zu. Add %zu more point(s) by clicking in the scene.\n\n", 
+               bezierControlPoints.size(), 4 - bezierControlPoints.size());
+        return;
+    }
+    
+    // Validate number of points for proper spline (should be 3n+1)
+    int numSegments = (bezierControlPoints.size() - 1) / 3;
+    int expectedPoints = numSegments * 3 + 1;
+    if (bezierControlPoints.size() != expectedPoints) {
+        printf("\n*** WARNING: Point count not optimal for spline! ***\n");
+        printf("You have %zu points. For %d complete segment(s), you need %d points.\n",
+               bezierControlPoints.size(), numSegments, expectedPoints);
+        printf("Extra points will be ignored.\n\n");
+    }
+    
+    printf("\n=== CREATING CUSTOM BEZIER FORMULA ===\n");
+    printf("Using %zu control points for %d segment(s)\n", bezierControlPoints.size(), numSegments);
+    
+    // Get the current scene (formula scene should be index 6)
+    if (activeSceneIndex != 6 || scenes.size() <= 6) {
+        printf("ERROR: Not in formula scene!\n");
+        return;
+    }
+    
+    printf("Creating new formula with custom path...\n");
+    
+    // Create new formula with custom path
+    Shader* vs = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fs = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
+    auto program = std::make_shared<ShaderProgram>(std::vector<Shader*>{vs, fs});
+    
+    // Setup camera for new shader program
+    if (camera) {
+        int fbWidth = 0, fbHeight = 0;
+        glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
+        float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+        program->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(program));
+    }
+    
+    // Setup lighting for new shader program
+    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(program));
+    mainLight->notifyObservers();
+    
+    auto formulaTexture = std::make_shared<Texture>("assets/textures/shrek.png");
+    auto model = Model::loadFromOBJ("assets/formula1.obj");
+    if (model) {
+        auto obj = std::make_unique<DrawableObject>(std::move(model), program);
+        obj->setTexture(formulaTexture);
+        auto t = std::make_unique<TransformComposite>();
+        
+        // Use user's control points!
+        float duration = 5.0f * numSegments; // 5 seconds per segment
+        t->addTransformation(std::make_unique<BezierSplineTransform>(
+            bezierControlPoints, duration, true, true
+        ));
+        // Rotace o -90° kolem Y osy, aby formule směřovala správně dopředu místo bokem
+        t->addTransformation(std::make_unique<Rotate>(glm::radians(90.0f), 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(0.02f, 0.02f, 0.02f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        obj->setColor(glm::vec3(0.1f, 0.9f, 0.1f)); // Green for custom path!
+        obj->setMaterial(0.2f, 0.8f, 0.9f, 128.0f);
+        
+        // Add the new formula to the scene
+        scenes[activeSceneIndex]->addObject(std::move(obj));
+        
+        printf(">>> NEW FORMULA CREATED with your custom path!\n");
+        printf(">>> Formula is now GREEN to indicate custom path.\n");
+        printf(">>> Duration: %.1f seconds (%d segments x 5s each)\n", duration, numSegments);
+        printf(">>> The original red formula is still there, you now have TWO formulas!\n");
+        printf(">>> Press 'X' to clear points and create another one.\n");
+        printf("=====================================\n\n");
+    } else {
+        printf("ERROR: Failed to load formula1.obj\n");
+    }
 }
 
 void Application::createArcadeScene() {

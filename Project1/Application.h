@@ -32,6 +32,12 @@ public:
     void deleteSelectedObject();
     void plantTreeAtClick(double xpos, double ypos);
     
+    // Bezier spline support
+    void addBezierControlPoint(double xpos, double ypos);
+    const std::vector<glm::vec3>& getBezierControlPoints() const { return bezierControlPoints; }
+    void clearBezierControlPoints() { bezierControlPoints.clear(); }
+    void createCustomBezierFormula();
+    
     // Arcade game
     ArcadeGame& getArcadeGame() { return arcadeGame; }
 
@@ -61,6 +67,9 @@ private:
     
     // Object picking
     unsigned int nextObjectID = 1;
+    
+    // Bezier spline control points
+    std::vector<glm::vec3> bezierControlPoints;
     
     // Arcade game
     ArcadeGame arcadeGame;
