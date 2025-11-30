@@ -36,7 +36,6 @@ uniform int numLights;
 uniform vec3 viewPos;
 uniform vec3 objectColor;
 
-//prepsat na hodnoty ze vzorce (phong)
 
 // Material coefficients from lighting model
 uniform float ra;  // ambient coefficient
@@ -55,32 +54,42 @@ vec3 calculatePointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     // Attenuation
     float attenuation = 1.0 / (light.constant + light.linear * distance + 
                                light.quadratic * distance * distance);
+
+    vec3 Id = light.color * light.intensity * attenuation; 
+    vec3 Is = light.color * light.intensity * attenuation;
     
     // Diffuse
-    float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = rd * diff * light.color * light.intensity;
+    float dot_n_l = max(dot(normal, lightDir), 0.0);
+    vec3 I_diffuse = Id * rd * dot_n_l;
     
     // Specular (Phong)
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), h);
-    vec3 specular = rs * spec * light.color * light.intensity;
+    float dot_r_c = max(dot(viewDir, reflectDir), 0.0); 
+    float specularFactor = pow(dot_r_c, h);
+
+    vec3 I_specular = Is * rs * specularFactor;
     
-    return (diffuse + specular) * attenuation;
+    return I_diffuse + I_specular;
 }
 
 vec3 calculateDirectionalLight(Light light, vec3 normal, vec3 viewDir) {
     vec3 lightDir = normalize(-light.direction);
+
+    vec3 Id = light.color * light.intensity;
+    vec3 Is = light.color * light.intensity;
     
     // Diffuse
-    float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = rd * diff * light.color * light.intensity;
+    float dot_n_l = max(dot(normal, lightDir), 0.0);
+    vec3 I_diffuse = Id * rd * dot_n_l;
     
     // Specular (Phong)
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), h);
-    vec3 specular = rs * spec * light.color * light.intensity;
+    float dot_r_c = max(dot(viewDir, reflectDir), 0.0);
+    float specularFactor = pow(dot_r_c, h);
     
-    return diffuse + specular;
+    vec3 I_specular = Is * rs * specularFactor;
+    
+    return I_diffuse + I_specular;
 }
 
 vec3 calculateSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
@@ -113,7 +122,9 @@ vec3 calculateSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
 }
 
 vec3 calculateAmbientLight(Light light) {
-    return ra * light.color * light.intensity;
+    vec3 Ia = light.color * light.intensity;
+
+    return Ia * ra;
 }
 
 void main() {

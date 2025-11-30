@@ -168,10 +168,10 @@ private:
     glm::vec3 calculateBezierPoint(const glm::vec3& p0, const glm::vec3& p1, 
                                    const glm::vec3& p2, const glm::vec3& p3, float t) const {
         float oneMinusT = 1.0f - t;
-        float oneMinusT2 = oneMinusT * oneMinusT;
-        float oneMinusT3 = oneMinusT2 * oneMinusT;
-        float t2 = t * t;
-        float t3 = t2 * t;
+        float oneMinusT2 = oneMinusT * oneMinusT;   // (1-t)^2
+        float oneMinusT3 = oneMinusT2 * oneMinusT;  // (1-t)^3
+        float t2 = t * t;                           // t^2
+        float t3 = t2 * t;                          // t^3
         
         return oneMinusT3 * p0 +
                3.0f * oneMinusT2 * t * p1 +
@@ -185,8 +185,10 @@ private:
         float oneMinusT2 = oneMinusT * oneMinusT;
         float t2 = t * t;
         
-        return 3.0f * oneMinusT2 * (p1 - p0) +
-               6.0f * oneMinusT * t * (p2 - p1) +
-               3.0f * t2 * (p3 - p2);
+        return 3.0f * (
+            oneMinusT2 * (p1 - p0) +           
+            2.0f * oneMinusT * t * (p2 - p1) + 
+            t2 * (p3 - p2)                     
+            );
     }
 };

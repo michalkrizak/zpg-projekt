@@ -158,6 +158,7 @@
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArcadeGame.h" />
     <ClInclude Include="BezierCurveTransform.h" />
     <ClInclude Include="BezierSplineTransform.h" />
     <ClInclude Include="DynamicLight.h" />
@@ -166,6 +167,7 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="LightObserver.h" />
     <ClInclude Include="LightTypes.h" />
+    <ClInclude Include="LinePathTransform.h" />
     <ClInclude Include="Target.h" />
     <ClInclude Include="TransformComponent.h" />
     <ClInclude Include="Application.h" />
@@ -187,7 +189,6 @@
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Skybox.h" />
     <ClInclude Include="sphere.h" />
-    <ClInclude Include="stb_image.h" />
     <ClInclude Include="suzi_flat.h" />
     <ClInclude Include="suzi_smooth.h" />
     <ClInclude Include="Texture.h" />
