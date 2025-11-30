@@ -20,7 +20,7 @@ public:
             if (target->getID() == targetID && target->isActive()) {
                 int points = target->getPointValue();
                 score += points;
-                target->setActive(false);  // Deaktivace cíle po zásahu
+                target->setActive(false);
                 return points;
             }
         }

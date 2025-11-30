@@ -61,9 +61,9 @@ private:
     std::vector<std::shared_ptr<DynamicLight>> dynamicLights;
     std::vector<class Firefly*> fireflies; // non-owning pointers; objects are owned by Scene
     
-    // Nový systém osvětlení
+    // Lighting system
     Flashlight flashlight;
-    std::vector<LightData> staticLights;  // Ambientní, směrová, bodová světla
+    std::vector<LightData> staticLights;  // Ambient, directional, point lights
     
     // Object picking
     unsigned int nextObjectID = 1;

@@ -12,7 +12,6 @@ public:
             color, cutOffAngle, outerCutOffAngle, intensity))
         , isOn(false)
     {
-        // Nastavení útlumu pro baterku (silnější světlo, ale kratší dosah)
         lightData.constant = 1.0f;
         lightData.linear = 0.09f;
         lightData.quadratic = 0.032f;

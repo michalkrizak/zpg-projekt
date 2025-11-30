@@ -4,7 +4,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-// Kubická Bézierova křivka s 4 kontrolními body
 class BezierCurveTransform : public TransformComponent {
 public:
     BezierCurveTransform(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3,
@@ -42,7 +41,6 @@ public:
                 }
                 glm::vec3 up = glm::normalize(glm::cross(tangent, right));
                 
-                // Vytvoříme rotační matici z bázových vektorů
                 glm::mat4 rotation = glm::mat4(1.0f);
                 rotation[0] = glm::vec4(right, 0.0f);
                 rotation[1] = glm::vec4(up, 0.0f);
@@ -59,7 +57,7 @@ public:
         startTime = static_cast<float>(glfwGetTime());
     }
 
-    // Veřejné gettery pro debugging
+    // Public getters for debugging
     glm::vec3 getCurrentPosition() const {
         float currentTime = static_cast<float>(glfwGetTime());
         float elapsed = currentTime - startTime;
@@ -79,13 +77,13 @@ public:
     }
 
 private:
-    glm::vec3 p0, p1, p2, p3; // 4 kontrolní body
+    glm::vec3 p0, p1, p2, p3; // 4 control points
     float duration;
     bool loop;
     bool orientToDirection;
     mutable float startTime;
 
-    // Výpočet bodu na kubické Bézierově křivce
+    // Calculate point on cubic Bezier curve
     // B(t) = (1-t)³*P0 + 3(1-t)²t*P1 + 3(1-t)t²*P2 + t³*P3
     glm::vec3 calculateBezierPoint(float t) const {
         float oneMinusT = 1.0f - t;
@@ -100,15 +98,17 @@ private:
                t3 * p3;
     }
 
-    // Výpočet tečného vektoru (derivace Bézierovy křivky)
-    // B'(t) = 3(1-t)²(P1-P0) + 6(1-t)t(P2-P1) + 3t²(P3-P2)
+    // Calculate tangent vector (derivative of Bezier curve)
+    // P'(t) = 3 * ( (1-t)^2 * (P1-P0) + 2(1-t)t * (P2-P1) + t^2 * (P3-P2) )
     glm::vec3 calculateBezierTangent(float t) const {
         float oneMinusT = 1.0f - t;
         float oneMinusT2 = oneMinusT * oneMinusT;
         float t2 = t * t;
         
-        return 3.0f * oneMinusT2 * (p1 - p0) +
-               6.0f * oneMinusT * t * (p2 - p1) +
-               3.0f * t2 * (p3 - p2);
+        return 3.0f * (
+            oneMinusT2 * (p1 - p0) +           
+            2.0f * oneMinusT * t * (p2 - p1) + 
+            t2 * (p3 - p2)                     
+            );
     }
 };

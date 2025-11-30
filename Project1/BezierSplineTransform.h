@@ -5,8 +5,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 
-// Bézierova spline křivka složená z více kubických Bézierových segmentů
-// Uživatel zadá n bodů, každé 4 body tvoří jeden segment
 class BezierSplineTransform : public TransformComponent {
 public:
     BezierSplineTransform(const std::vector<glm::vec3>& controlPoints, 
@@ -15,7 +13,6 @@ public:
           orientToDirection(orientToDirection),
           startTime(static_cast<float>(glfwGetTime())) {
         
-        // Vypočítáme počet segmentů (každý segment má 4 body)
         if (controlPoints.size() >= 4) {
             numSegments = (controlPoints.size() - 1) / 3;
         } else {
@@ -31,7 +28,6 @@ public:
         float currentTime = static_cast<float>(glfwGetTime());
         float elapsed = currentTime - startTime;
         
-        // Normalizovaný čas (0.0 - 1.0) pro celou spline
         float globalT = elapsed / duration;
         
         if (loop) {
@@ -39,20 +35,16 @@ public:
         } else {
             if (globalT > 1.0f) globalT = 1.0f;
         }
-        
-        // Pozice na spline křivce
+        // Position on spline
         glm::vec3 position = calculateSplinePoint(globalT);
-        
-        // Základní translační matice
         glm::mat4 matrix = glm::translate(glm::mat4(1.0f), position);
         
-        // Orientace podle směru pohybu
+        // Orient according to movement direction
         if (orientToDirection) {
             glm::vec3 tangent = calculateSplineTangent(globalT);
             if (glm::length(tangent) > 0.001f) {
                 tangent = glm::normalize(tangent);
                 
-                // Vytvoříme rotační matici
                 glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), tangent));
                 if (glm::length(right) < 0.001f) {
                     right = glm::normalize(glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), tangent));
@@ -75,7 +67,7 @@ public:
         startTime = static_cast<float>(glfwGetTime());
     }
 
-    // Přidání dalších kontrolních bodů dynamicky
+    // Add additional control points dynamically
     void addControlPoint(const glm::vec3& point) {
         controlPoints.push_back(point);
         if (controlPoints.size() >= 4) {
@@ -113,35 +105,30 @@ private:
     bool orientToDirection;
     mutable float startTime;
 
-    // Výpočet bodu na spline křivce
+    // Calculate point on spline curve
     glm::vec3 calculateSplinePoint(float globalT) const {
         if (numSegments == 0) return glm::vec3(0.0f);
         
-        // Určíme, ve kterém segmentu se nacházíme
         float segmentFloat = globalT * numSegments;
         int segmentIndex = static_cast<int>(std::floor(segmentFloat));
         
-        // Ošetření krajního případu
         if (segmentIndex >= numSegments) {
             segmentIndex = numSegments - 1;
             segmentFloat = static_cast<float>(numSegments);
         }
         
-        // Lokální t v rámci daného segmentu (0.0 - 1.0)
         float localT = segmentFloat - segmentIndex;
         
-        // Získáme 4 kontrolní body pro daný segment
         int baseIndex = segmentIndex * 3;
         glm::vec3 p0 = controlPoints[baseIndex];
         glm::vec3 p1 = controlPoints[baseIndex + 1];
         glm::vec3 p2 = controlPoints[baseIndex + 2];
         glm::vec3 p3 = controlPoints[baseIndex + 3];
         
-        // Výpočet bodu na kubické Bézierově křivce
         return calculateBezierPoint(p0, p1, p2, p3, localT);
     }
 
-    // Výpočet tečného vektoru na spline křivce
+    // Calculate tangent vector on spline curve
     glm::vec3 calculateSplineTangent(float globalT) const {
         if (numSegments == 0) return glm::vec3(0.0f, 0.0f, 1.0f);
         
@@ -164,7 +151,7 @@ private:
         return calculateBezierTangent(p0, p1, p2, p3, localT);
     }
 
-    // Pomocné funkce pro výpočet Bézierovy křivky
+    // Helper functions for Bezier curve calculation
     glm::vec3 calculateBezierPoint(const glm::vec3& p0, const glm::vec3& p1, 
                                    const glm::vec3& p2, const glm::vec3& p3, float t) const {
         float oneMinusT = 1.0f - t;
@@ -179,6 +166,7 @@ private:
                t3 * p3;
     }
 
+    // P'(t) = 3 * ( (1-t)^2 * (P1-P0) + 2(1-t)t * (P2-P1) + t^2 * (P3-P2) )
     glm::vec3 calculateBezierTangent(const glm::vec3& p0, const glm::vec3& p1,
                                      const glm::vec3& p2, const glm::vec3& p3, float t) const {
         float oneMinusT = 1.0f - t;

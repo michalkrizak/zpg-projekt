@@ -5,14 +5,13 @@
 class Target : public DrawableObject {
 public:
     enum class TargetType {
-        SPHERE,   // 10 bodů - základní cíl
-        CUBE,     // 20 bodů - střední hodnota
-        GIFT      // 50 bodů - cenný cíl
+        SPHERE,   // 10 points
+        CUBE,     // 20 points
+        GIFT      // 50 points
     };
 
     Target(std::unique_ptr<Model> m, std::shared_ptr<ShaderProgram> sp, TargetType type)
         : DrawableObject(std::move(m), sp), targetType(type) {
-        // Nastavení bodové hodnoty podle typu
         switch (type) {
             case TargetType::SPHERE:
                 pointValue = 10;
@@ -35,5 +34,5 @@ public:
 private:
     TargetType targetType;
     int pointValue;
-    bool active = true;  // Zda je cíl aktivní (může být zasažen)
+    bool active = true;  // Whether target is active (can be hit)
 };

@@ -144,7 +144,7 @@ void ShaderProgram::setAdvancedLights(const std::vector<::LightData>& allLights)
         setUniform(prefix + "direction", light.direction);
         setUniform(prefix + "color", light.color);
         setUniform(prefix + "intensity", light.intensity);
-        setUniform(prefix + "cutOff", std::cos(light.cutOff));  // Předpočítáme cos pro shader
+        setUniform(prefix + "cutOff", std::cos(light.cutOff));
         setUniform(prefix + "outerCutOff", std::cos(light.outerCutOff));
         setUniform(prefix + "constant", light.constant);
         setUniform(prefix + "linear", light.linear);
@@ -158,7 +158,7 @@ void ShaderProgram::setAdvancedLights(const std::vector<::LightData>& allLights)
     
     setUniform("numLights", static_cast<int>(allLights.size()));
     
-    // Backward compatibility: pro starší shadery nastavíme první bodové světlo
+    // Backward compatibility: set first point light for older shaders
     for (const auto& light : allLights) {
         if (light.enabled && light.type == LightType::POINT) {
             setUniform("lightPosition", light.position);

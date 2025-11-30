@@ -12,6 +12,6 @@ public:
     }
 
 private:
-    float angle;      // uhel v radiánech
-    glm::vec3 axis;   // osa rotace
+    float angle;      // angle in radians
+    glm::vec3 axis;   // rotation axis
 };

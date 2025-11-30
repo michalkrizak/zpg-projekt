@@ -154,7 +154,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
 Application::Application(int width, int height, const std::string& title)
     : window(width, height, title)
-    , flashlight(glm::vec3(1.0f, 1.0f, 0.9f), 2.0f, 12.5f, 17.5f)  // Bílé světlo, vyšší intenzita
+    , flashlight(glm::vec3(1.0f, 1.0f, 0.9f), 2.0f, 12.5f, 17.5f)
 {
     g_app = this;
     glfwSetKeyCallback(window.getGLFWwindow(), keyCallback);
@@ -174,21 +174,21 @@ Application::Application(int width, int height, const std::string& title)
     );
 
 
-    // 1. Ambientní osvětlení (tmavé, noční prostředí)
+    // 1. Ambient light (dark, nighttime environment)
     staticLights.push_back(LightData::createAmbient(glm::vec3(0.1f, 0.1f, 0.15f), 0.05f));
     
-    // 2. Směrové světlo (měsíc)
+    // 2. Directional light (moon)
     staticLights.push_back(LightData::createDirectional(
-        glm::vec3(-0.2f, -1.0f, -0.3f),  // Směr dolů a mírně do strany
-        glm::vec3(0.15f, 0.15f, 0.2f),   // Modravé měsíční světlo
-        0.3f                              // Nízká intenzita
+        glm::vec3(-0.2f, -1.0f, -0.3f),
+        glm::vec3(0.15f, 0.15f, 0.2f),
+        0.3f
     ));
     
-    // 3. Bodové světlo (např. lampa nebo oheň)
+    // 3. Point light (fire)
     staticLights.push_back(LightData(
-        glm::vec3(5.0f, 1.0f, 5.0f),     // Pozice
-        glm::vec3(1.0f, 0.6f, 0.2f),     // Oranžová barva (oheň)
-        1.0f                              // Intenzita
+        glm::vec3(5.0f, 1.0f, 5.0f),
+        glm::vec3(1.0f, 0.6f, 0.2f),
+        1.0f
     ));
 }
 
@@ -267,7 +267,7 @@ void Application::run() {
 
         if (!scenes.empty() && activeSceneIndex < scenes.size()) {
             if (camera) {
-                // Pro scénu s formulí (index 6) použijeme vykreslení se skyboxem
+                // For formula scene (index 6) use rendering with skybox
                 if (activeSceneIndex == 6) {
                     scenes[activeSceneIndex]->drawAll(camera->getPosition(), 
                                                      camera->getViewMatrix(), 
@@ -286,7 +286,7 @@ void Application::run() {
 }
 
 void Application::createForestScene() {
-    // Forest shaders - používáme advanced_lighting.frag pro podporu všech typů světel
+    // Forest shaders - using advanced_lighting.frag for all light types support
     Shader* vsForest = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
     Shader* fsForest = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
     auto programForest = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsForest, fsForest});
@@ -350,19 +350,17 @@ void Application::createForestScene() {
         std::cerr << "Forest scene: failed to load assets/toiled.obj" << std::endl;
     }
 
-    // Ground plane s texturou trávy
+    // Ground plane with grass texture
     {
         auto m = std::make_unique<Model>(plain, plainDataSize, 6);
         auto ground = std::make_unique<DrawableObject>(std::move(m), programForest);
         
-        //ground->setColor(glm::vec3(0.1f, 0.3f, 0.1f)); // Tmavě zelená zem (fallback)
-        // Material: grass/soil (low ambient, full diffuse, very low specular, low shininess)
         ground->setMaterial(0.1f, 1.0f, 0.02f, 8.0f);
         auto t = std::make_unique<TransformComposite>();
         t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(30.0f, 1.0f, 30.0f));
         ground->getTransform().addTransformation(std::move(t));
-        ground->setTexture(groundTexture); // Textura trávy
+        ground->setTexture(groundTexture);
         forest->addObject(std::move(ground));
     }
 
@@ -370,7 +368,7 @@ void Application::createForestScene() {
     for (int i = 0; i < 120; ++i) {
         auto m = std::make_unique<Model>(tree, treeDataSize, 6);
         auto obj = std::make_unique<DrawableObject>(std::move(m), programForest);
-        obj->setColor(glm::vec3(0.15f, 0.3f, 0.1f)); // Tmavě zelená barva stromů
+        obj->setColor(glm::vec3(0.15f, 0.3f, 0.1f));
         float x = distPos(rng);
         float z = distPos(rng);
         float s = distScale(rng);
@@ -385,7 +383,7 @@ void Application::createForestScene() {
     for (int i = 0; i < 120; ++i) {
         auto m = std::make_unique<Model>(bushes, bushesDataSize, 6);
         auto obj = std::make_unique<DrawableObject>(std::move(m), programForest);
-        obj->setColor(glm::vec3(0.1f, 0.25f, 0.08f)); // Tmavě zelená barva keřů
+        obj->setColor(glm::vec3(0.1f, 0.25f, 0.08f));
         float x = distPos(rng);
         float z = distPos(rng);
         float s = distScale(rng) * 3.0f;
@@ -400,7 +398,7 @@ void Application::createForestScene() {
     mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programGround));
     mainLight->notifyObservers();
 
-    // Create fireflies (světlušky) - glowing spheres with dynamic lights
+    // Create fireflies - glowing spheres with dynamic lights
     Shader* vsEmissive = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
     Shader* fsEmissive = Shader::createFromFile(GL_FRAGMENT_SHADER, "emissive.frag");
     auto programEmissive = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsEmissive, fsEmissive});
@@ -411,12 +409,12 @@ void Application::createForestScene() {
     std::uniform_real_distribution<float> distFireflyRadius(1.5f, 3.5f);
     std::uniform_real_distribution<float> distFireflyHeight(0.05f, 0.35f);
     
-    // Různé barvy pro světlušky (zelená, žlutá, teplá bílá) - vysoká intenzita pro viditelné světlo
+    // Various colors for fireflies (green, yellow, warm white) - high intensity for visible light
     std::vector<glm::vec3> fireflyColors = {
         glm::vec3(2.0f, 1.8f, 0.5f)
     };
     
-    // Vytvoříme 12 světlušek jako DrawableObject + DynamicLight
+    // Create 12 fireflies as DrawableObject + DynamicLight
     for (int i = 0; i < 12; ++i) {
         float x = distFireflyPos(rng);
         float z = distFireflyPos(rng);
@@ -450,7 +448,7 @@ void Application::createForestScene() {
     fireflies.push_back(fireflyPtr);
     }
 
-    // Skydome - velká polokoule/koule s texturou oblohy
+    // Skydome - large hemisphere/sphere with sky texture
     /*auto skydomeTexture = std::make_shared<Texture>("assets/textures/skydome.png");
     Shader* vsSkydome = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
     Shader* fsSkydome = Shader::createFromFile(GL_FRAGMENT_SHADER, "skydome.frag");
@@ -459,13 +457,12 @@ void Application::createForestScene() {
         auto m = std::make_unique<Model>(sphere, sphereDataSize, 6);
         auto skydome = std::make_unique<DrawableObject>(std::move(m), programSkydome);
         skydome->setTexture(skydomeTexture);
-        skydome->setColor(glm::vec3(1.0f, 1.0f, 1.0f)); // Bílá, aby textura nebyla zkreslená
+        skydome->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
         auto t = std::make_unique<TransformComposite>();
-        // Velká koule nad scénou (kopule)
-        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f)); // Na úrovni země
-        t->addTransformation(std::make_unique<Scale>(50.0f, 50.0f, 50.0f)); // Velká, aby pokryla celou scénu
+        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(50.0f, 50.0f, 50.0f));
         skydome->getTransform().addTransformation(std::move(t));
-        skydome->setModelType(0); // Constant shader (žádné osvětlení)
+        skydome->setModelType(0);
         forest->addObject(std::move(skydome));
     }*/
 
@@ -480,7 +477,7 @@ void Application::createFormulaScene() {
     Shader* fs = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
     auto program = std::make_shared<ShaderProgram>(std::vector<Shader*>{vs, fs});
 
-    // Načteme textury (pokud existují, jinak použijeme pouze barvy)
+    // Load textures (if they exist, otherwise use colors only)
     auto formulaTexture = std::make_shared<Texture>("assets/textures/shaded.png");
     auto tungTexture = std::make_shared<Texture>("assets/textures/tung.png");
     auto treeTexture = std::make_shared<Texture>("assets/textures/tree1.png");
@@ -491,7 +488,7 @@ void Application::createFormulaScene() {
     auto model = Model::loadFromOBJ("assets/base.obj");
     if (model) {
         auto obj = std::make_unique<DrawableObject>(std::move(model), program);
-        obj->setTexture(formulaTexture); // Přidána textura
+        obj->setTexture(formulaTexture);
         auto t = std::make_unique<TransformComposite>();
 
         std::vector<glm::vec3> splinePoints = {
@@ -536,7 +533,7 @@ void Application::createFormulaScene() {
     // House with wood texture
     if (auto m = Model::loadFromOBJ("assets/tung.obj")) {
         auto obj = std::make_unique<DrawableObject>(std::move(m), program);
-        obj->setTexture(tungTexture); // Dřevěná textura
+        obj->setTexture(tungTexture);
         auto t = std::make_unique<TransformComposite>();
         t->addTransformation(std::make_unique<Translate>(-3.5f, -1.0f, -4.0f));
         t->addTransformation(std::make_unique<Scale>(0.5f, 0.5f, 0.5f));
@@ -552,7 +549,7 @@ void Application::createFormulaScene() {
     // Cube with metal texture
     if (auto m = Model::loadFromOBJ("assets/tree1.obj")) {
         auto obj = std::make_unique<DrawableObject>(std::move(m), program);
-        obj->setTexture(treeTexture); // Kovová textura
+        obj->setTexture(treeTexture);
         auto t = std::make_unique<TransformComposite>();
         t->addTransformation(std::make_unique<Translate>(3.0f, -1.0f, -3.0f));
         t->addTransformation(std::make_unique<Scale>(0.7f, 0.7f, 0.7f));
@@ -588,7 +585,7 @@ void Application::createFormulaScene() {
     {
         auto m = std::make_unique<Model>(plain, plainDataSize, 6);
         auto ground = std::make_unique<DrawableObject>(std::move(m), groundProgram);
-        ground->setTexture(groundTexture); // Asfaltová textura
+        ground->setTexture(groundTexture);
         ground->setColor(glm::vec3(0.12f, 0.12f, 0.12f));
         // Material: matte asphalt (low ambient, full diffuse, minimal specular, low shininess)
         ground->setMaterial(0.1f, 1.0f, 0.05f, 8.0f);
@@ -599,7 +596,7 @@ void Application::createFormulaScene() {
         scene->addObject(std::move(ground));
     }
 
-    // Přidání skyboxu
+    // Add skybox
     Shader* vsSkybox = Shader::createFromFile(GL_VERTEX_SHADER, "skybox.vert");
     Shader* fsSkybox = Shader::createFromFile(GL_FRAGMENT_SHADER, "skybox.frag");
     auto skyboxProgram = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSkybox, fsSkybox});
@@ -778,7 +775,7 @@ void Application::createSolarScene() {
     auto programSun = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSolar, fsSun});
     auto programPlanet = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSolar, fsPlanet});
 
-    // Načtení textur planet
+    // Load planet textures
     auto sunTexture = std::make_shared<Texture>("assets/textures/planets/sun.jpg");
     auto mercuryTexture = std::make_shared<Texture>("assets/textures/planets/mercury.jpg");
     auto venusTexture = std::make_shared<Texture>("assets/textures/planets/venus.jpg");
@@ -810,7 +807,6 @@ void Application::createSolarScene() {
         }
         auto sun = std::make_unique<DrawableObject>(std::move(m), programSun);
         auto t = std::make_unique<TransformComposite>();
-        // Rotace Slunce kolem své osy
         t->addTransformation(std::make_unique<DynamicRotate>(0.05f, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(2.0f, 2.0f, 2.0f));
         sun->getTransform().addTransformation(std::move(t));
@@ -836,7 +832,6 @@ void Application::createSolarScene() {
         // 1. Orbit kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(mercuryOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(mercuryOrbitRadius, 0.0f, 0.0f));
-        // 2. Rotace kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(mercuryRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(mercuryScale, mercuryScale, mercuryScale));
         mercury->getTransform().addTransformation(std::move(t));
@@ -848,7 +843,7 @@ void Application::createSolarScene() {
     }
 
 
-    // VENUŠE
+    // VENUS
     float venusOrbitRadius = 5.5f;
     float venusOrbitSpeed = 1.1f; 
     float venusRotationSpeed = -0.1f;
@@ -864,7 +859,6 @@ void Application::createSolarScene() {
         // 1. Orbit kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(venusOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(venusOrbitRadius, 0.0f, 0.0f));
-        // 2. Rotace kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(venusRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(venusScale, venusScale, venusScale));
         venus->getTransform().addTransformation(std::move(t));
@@ -876,7 +870,7 @@ void Application::createSolarScene() {
     }
 
 
-    // ZEMĚ
+    // EARTH
     float earthOrbitRadius = 7.5f;
     float earthOrbitSpeed = 1.0f;
     float earthRotationSpeed = 3.0f;
@@ -892,7 +886,6 @@ void Application::createSolarScene() {
         // 1. Orbit kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(earthOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(earthOrbitRadius, 0.0f, 0.0f));
-        // 2. Rotace Země kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(earthRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(earthScale, earthScale, earthScale));
         earth->getTransform().addTransformation(std::move(t));
@@ -903,7 +896,7 @@ void Application::createSolarScene() {
         solarScene->addObject(std::move(earth));
     }
 
-    // MĚSÍC 
+    // MOON
     float moonOrbitRadius = 1.0f;
     float moonOrbitSpeed = 4.5f;
     float moonRotationSpeed = 0.3f;
@@ -916,13 +909,10 @@ void Application::createSolarScene() {
         if (!m) m = std::make_unique<Model>(sphere, sphereDataSize, 6);
         auto moon = std::make_unique<DrawableObject>(std::move(m), programPlanet);
         auto t = std::make_unique<TransformComposite>();
-        // 1. Nejdříve se musí pohybovat s Zemí kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(earthOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(earthOrbitRadius, 0.0f, 0.0f));
-        // 2. Pak obíhá kolem Země
         t->addTransformation(std::make_unique<DynamicRotate>(moonOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(moonOrbitRadius, 0.0f, 0.0f));
-        // 3. Rotace kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(moonRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(moonScale, moonScale, moonScale));
         moon->getTransform().addTransformation(std::move(t));
@@ -941,14 +931,11 @@ void Application::createSolarScene() {
         float loginScale = 0.13f;
 
         auto obj = std::make_unique<DrawableObject>(std::move(model), programPlanet);
-        //obj->setTexture(formulaTexture); // Přidána textura
         auto t = std::make_unique<TransformComposite>();
         t->addTransformation(std::make_unique<DynamicRotate>(earthOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(earthOrbitRadius, 0.0f, 0.0f));
-        // 2. Pak obíhá kolem Země
         t->addTransformation(std::make_unique<DynamicRotate>(loginOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(loginOrbitRadius, 0.0f, 0.0f));
-        // 3. Rotace kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(loginRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(loginScale, loginScale, loginScale));
         obj->getTransform().addTransformation(std::move(t));
@@ -977,7 +964,6 @@ void Application::createSolarScene() {
         // 1. Orbit kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(marsOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(marsOrbitRadius, 0.0f, 0.0f));
-        // 2. Rotace kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(marsRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(marsScale, marsScale, marsScale));
         mars->getTransform().addTransformation(std::move(t));
@@ -1004,7 +990,6 @@ void Application::createSolarScene() {
         // 1. Orbit kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(jupiterOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(jupiterOrbitRadius, 0.0f, 0.0f));
-        // 2. Rotace kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(jupiterRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(jupiterScale, jupiterScale, jupiterScale));
         jupiter->getTransform().addTransformation(std::move(t));
@@ -1032,7 +1017,6 @@ void Application::createSolarScene() {
         // 1. Orbit kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(saturnOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(saturnOrbitRadius, 0.0f, 0.0f));
-        // 2. Rotace kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(saturnRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(saturnScale, saturnScale, saturnScale));
         saturn->getTransform().addTransformation(std::move(t));
@@ -1060,7 +1044,6 @@ void Application::createSolarScene() {
         // 1. Orbit kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(uranOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(uranOrbitRadius, 0.0f, 0.0f));
-        // 2. Rotace kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(uranRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(uranScale, uranScale, uranScale));
         uran->getTransform().addTransformation(std::move(t));
@@ -1072,7 +1055,7 @@ void Application::createSolarScene() {
     }
 
 
-    // NEPTU - nejvzdálenější planeta (165 let oběh, 16h rotace)
+    // NEPTUNE - most distant planet
     float neptunOrbitRadius = 26.0f;
     float neptunOrbitSpeed = 0.18f;
     float neptunRotationSpeed = 3.8f;
@@ -1088,7 +1071,6 @@ void Application::createSolarScene() {
         // 1. Orbit kolem Slunce
         t->addTransformation(std::make_unique<DynamicRotate>(neptunOrbitSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Translate>(neptunOrbitRadius, 0.0f, 0.0f));
-        // 2. Rotace kolem vlastní osy
         t->addTransformation(std::make_unique<DynamicRotate>(neptunRotationSpeed, 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(neptunScale, neptunScale, neptunScale));
         neptun->getTransform().addTransformation(std::move(t));
@@ -1206,16 +1188,16 @@ void Application::updateDynamicLights() {
     if (!scenes.empty() && activeSceneIndex < scenes.size()) {
         auto programs = scenes[activeSceneIndex]->getShaderPrograms();
         
-        // Sestavíme všechna světla do jednoho seznamu
+        // Assemble all lights into one list
         std::vector<LightData> allLights;
 
-        // 1. Přidáme statická světla (ambient, directional, bodová)
+        // 1. Add static lights (ambient, directional, point)
         allLights.insert(allLights.end(), staticLights.begin(), staticLights.end());
 
-        // 1a. Pro planetární scénu (index 3) přidejme silné osvětlení pro viditelnost planet
+        // 1a. For planetary scene (index 3) add strong lighting for planet visibility
         if (activeSceneIndex == 3) {
             allLights.push_back(LightData::createAmbient(glm::vec3(0.3f, 0.3f, 0.3f), 0.5f));
-            // Silné bodové světlo ze středu (simulace Slunce jako zdroje světla)
+            // Strong point light from center (simulating Sun as light source)
             LightData sunLight(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.95f, 0.8f), 3.0f);
             sunLight.constant = 1.0f;
             sunLight.linear = 0.02f;
@@ -1223,45 +1205,42 @@ void Application::updateDynamicLights() {
             allLights.push_back(sunLight);
         }
         
-        // 1b. Pro scénu sázení stromů (index 5) přidejme jasné denní osvětlení
+        // 1b. For tree planting scene (index 5) add bright daylight
         if (activeSceneIndex == 5) {
-            allLights.push_back(LightData::createAmbient(glm::vec3(0.4f, 0.45f, 0.5f), 0.8f)); // Jasný modrý ambient
-            // Silné sluneční světlo shora
+            allLights.push_back(LightData::createAmbient(glm::vec3(0.4f, 0.45f, 0.5f), 0.8f));
             allLights.push_back(LightData::createDirectional(
-                glm::vec3(-0.3f, -1.0f, -0.2f),             // Směr ze slunce
-                glm::vec3(1.0f, 0.95f, 0.8f),               // Teplé sluneční světlo
-                2.0f                                         // Vysoká intenzita
+                glm::vec3(-0.3f, -1.0f, -0.2f),
+                glm::vec3(1.0f, 0.95f, 0.8f),
+                2.0f
             ));
         }
         
-        // 1c. Pro scénu s formulí (index 6) přidejme světlejší ambient, aby nebyla tma
+        // 1c. For formula scene (index 6) add brighter ambient
         if (activeSceneIndex == 6) {
             allLights.push_back(LightData::createAmbient(glm::vec3(0.2f, 0.2f, 0.2f), 0.6f));
-            // a silnější konstantní směrové světlo (studiové)
             allLights.push_back(LightData::createDirectional(
-                glm::vec3(-0.2f, -1.0f, -0.15f),           // směr shora mírně dopředu
-                glm::vec3(1.0f, 0.98f, 0.95f),              // téměř bílé světlo
-                1.2f                                        // vyšší intenzita
+                glm::vec3(-0.2f, -1.0f, -0.15f),
+                glm::vec3(1.0f, 0.98f, 0.95f),
+                1.2f
             ));
         }
         
-        // 1d. Pro arkádovou hru (index 7) jasné osvětlení pro lepší viditelnost cílů
+        // 1d. For arcade game (index 7) bright lighting for better target visibility
         if (activeSceneIndex == 7) {
             allLights.push_back(LightData::createAmbient(glm::vec3(0.5f, 0.5f, 0.5f), 0.7f));
-            // Silné světlo shora
             allLights.push_back(LightData::createDirectional(
-                glm::vec3(0.0f, -1.0f, 0.0f),              // Přímo shora
-                glm::vec3(1.0f, 1.0f, 1.0f),               // Bílé světlo
-                1.5f                                        // Vysoká intenzita
+                glm::vec3(0.0f, -1.0f, 0.0f),
+                glm::vec3(1.0f, 1.0f, 1.0f),
+                1.5f
             ));
         }
 
-        // 2. Přidáme baterku POUZE pokud je zapnutá
+        // 2. Add flashlight ONLY if it's on
         if (flashlight.getIsOn()) {
             allLights.push_back(flashlight.getLightData());
         }
 
-        // 3. Přidáme světlušky jen ve scéně lesa (index 0)
+        // 3. Add fireflies only in forest scene (index 0)
         if (activeSceneIndex == 0) {
             for (auto& f : fireflies) {
                 LightData fireflyLight(f->Light::getPosition(), f->Light::getColor(), 1.0f);
@@ -1272,13 +1251,13 @@ void Application::updateDynamicLights() {
             }
         }
 
-        // 4. Přidáme další dynamická světla
+        // 4. Add other dynamic lights
         for (auto& l : dynamicLights) {
             LightData dynamicLight(l->getPosition(), l->getColor(), 1.0f);
             allLights.push_back(dynamicLight);
         }
         
-        // Nastavíme všechna světla do všech shader programů (pokročilý systém)
+        // Set all lights to all shader programs
         for (auto& sp : programs) {
             sp->setAdvancedLights(allLights);
         }
@@ -1288,7 +1267,7 @@ void Application::updateDynamicLights() {
 void Application::handleMouseClick(double xpos, double ypos) {
     if (activeSceneIndex >= scenes.size() || !camera) return;
     
-    // Načtení ID a pozice ve světových souřadnicích
+    // Load ID and position in world coordinates
     GLbyte color[4];
     GLfloat depth;
     GLubyte stencilByte;  // 8-bit stencil value
@@ -1308,17 +1287,15 @@ void Application::handleMouseClick(double xpos, double ypos) {
     //printf("Clicked on pixel %d, %d, color %02hhx%02hhx%02hhx%02hhx, depth %f, stencil index %u\n", x, y, color[0], color[1], color[2], color[3], depth, index);
            
     
-    // Speciální zpracování pro arkádovou hru (scéna 7)
+    // Special handling for arcade game (scene 7)
     if (activeSceneIndex == 7 && index != 0) {
         int points = arcadeGame.hitTarget(index);
         if (points > 0) {
-            printf("*** ZASAH! +%d bodu! Celkove skore: %d ***\n", points, arcadeGame.getScore());
+            printf("*** HIT! +%d points! Total score: %d ***\n", points, arcadeGame.getScore());
             
-            // Vizuální feedback - objekt zmizí (bude neaktivní)
             DrawableObject* obj = scenes[activeSceneIndex]->getObjectByID(index);
             if (obj) {
-                // Můžeme objekt odstranit nebo jen změnit barvu
-                obj->setColor(glm::vec3(0.2f, 0.2f, 0.2f)); // Ztmavení
+                obj->setColor(glm::vec3(0.2f, 0.2f, 0.2f));
             }
         }
         return;
@@ -1333,17 +1310,17 @@ void Application::handleMouseClick(double xpos, double ypos) {
         if (obj) {
             obj->setSelected(true);
             
-            // Vypočíst pozici v globálním souřadném systému
+            // Calculate position in global coordinate system
             glm::vec3 screenX = glm::vec3(x, newy, depth);
             glm::mat4 view = camera->getViewMatrix();
             glm::mat4 projection = camera->getProjectionMatrix(fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f);
             glm::vec4 viewPort = glm::vec4(0, 0, fbWidth, fbHeight);
             glm::vec3 pos = glm::unProject(screenX, view, projection, viewPort);
             
-            printf("Vybran objekt s ID: %u\n", index);
+            printf("Selected object with ID: %u\n", index);
         }
     } else {
-        std::cout << "Nebyl vybran zadny objekt" << std::endl;
+        std::cout << "No object selected" << std::endl;
     }
 }
 
@@ -1446,14 +1423,14 @@ void Application::addBezierControlPoint(double xpos, double ypos) {
     printf("Point %zu: [%.2f, %.2f, %.2f]\n", 
            bezierControlPoints.size(), worldPos.x, worldPos.y, worldPos.z);
     
-    // Pokud máme alespoň 4 body, můžeme vytvořit/aktualizovat křivku
+    // If we have at least 4 points, we can create/update curve
     if (bezierControlPoints.size() >= 4) {
         int numSegments = (bezierControlPoints.size() - 1) / 3;
         printf(">>> You can now create Bezier spline with %d segment(s)\n", numSegments);
         printf(">>> To use YOUR points, you need to:\n");
         printf("    2. Press 'C' to create a NEW formula with your custom path\n");
         
-        // Po každých 4 bodech vytváříme nový segment
+        // Create new segment every 4 points
         if ((bezierControlPoints.size() - 1) % 3 == 0) {
             printf(">>> SEGMENT %d COMPLETE! Click 3 more points for next segment.\n", numSegments);
         }
@@ -1524,7 +1501,6 @@ void Application::createCustomBezierFormula() {
         t->addTransformation(std::make_unique<BezierSplineTransform>(
             bezierControlPoints, duration, true, true
         ));
-        // Rotace o -90° kolem Y osy, aby formule směřovala správně dopředu místo bokem
         t->addTransformation(std::make_unique<Rotate>(glm::radians(90.0f), 0.0f, 1.0f, 0.0f));
         t->addTransformation(std::make_unique<Scale>(0.02f, 0.02f, 0.02f));
         obj->getTransform().addTransformation(std::move(t));
@@ -1552,20 +1528,20 @@ void Application::createArcadeScene() {
     
     auto arcadeScene = std::make_unique<Scene>();
 
-    // Shadery pro arkádu
+    // Arcade shaders
     Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
     Shader* fsAdvanced = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
     auto programTargets = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsAdvanced});
 
-    // Shader pro pozadí/zem
+    // Background/ground shader
     Shader* vsBg = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
     Shader* fsBg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
     auto programBg = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsBg, fsBg});
 
-    // Textura pro pozadí
+    // Background texture
     auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
 
-    // Vytvoření pozadí/země
+    // Create background/ground
     {
         auto m = std::make_unique<Model>(plain, plainDataSize, 6);
         auto ground = std::make_unique<DrawableObject>(std::move(m), programBg);
@@ -1580,7 +1556,7 @@ void Application::createArcadeScene() {
         arcadeScene->addObject(std::move(ground));
     }
 
-    // Vytvoření cílů s náhodnými cestami
+    // Create targets with random paths
     std::vector<Target::TargetType> targetTypes = {
         Target::TargetType::SPHERE,
         Target::TargetType::SPHERE,
@@ -1596,25 +1572,25 @@ void Application::createArcadeScene() {
         glm::vec3 color;
         float scale = 0.3f;
 
-        // Výběr modelu podle typu cíle
+        // Select model based on target type
         switch (type) {
             case Target::TargetType::SPHERE:
                 model = std::make_unique<Model>(sphere, sphereDataSize, 6);
-                color = glm::vec3(0.2f, 0.6f, 1.0f); // Modrá
+                color = glm::vec3(0.2f, 0.6f, 1.0f);
                 scale = 0.3f;
                 break;
             case Target::TargetType::CUBE:
                 if (auto m = Model::loadFromOBJ("assets/cube.obj")) {
                     model = std::move(m);
                 } else {
-                    model = std::make_unique<Model>(sphere, sphereDataSize, 6); // Fallback
+                    model = std::make_unique<Model>(sphere, sphereDataSize, 6);
                 }
-                color = glm::vec3(1.0f, 0.8f, 0.2f); // Žlutá
+                color = glm::vec3(1.0f, 0.8f, 0.2f);
                 scale = 0.4f;
                 break;
             case Target::TargetType::GIFT:
                 model = std::make_unique<Model>(gift, giftDataSize, 6);
-                color = glm::vec3(1.0f, 0.2f, 0.3f); // Červená
+                color = glm::vec3(1.0f, 0.2f, 0.3f);
                 scale = 1.0f;
                 break;
         }
@@ -1623,10 +1599,9 @@ void Application::createArcadeScene() {
         target->setColor(color);
         target->setModelType(2);
         target->setMaterial(0.2f, 1.0f, 0.6f, 32.0f);
-        // ID bude nastaveno automaticky v addScene()
 
-        // Generování náhodné cesty (lomená čára s 3-5 body)
-        int numPoints = 3 + (i % 3); // 3-5 bodů
+        // Generate random path (polyline with 3-5 points)
+        int numPoints = 3 + (i % 3);
         auto path = arcadeGame.generateRandomPath(numPoints, -8.0f, 8.0f, -1.0f, 2.0f, -8.0f, 8.0f);
         float duration = arcadeGame.getRandomDuration(3.0f, 8.0f);
 
@@ -1635,11 +1610,10 @@ void Application::createArcadeScene() {
         t->addTransformation(std::make_unique<Scale>(scale, scale, scale));
         target->getTransform().addTransformation(std::move(t));
 
-        // Přidáme do scény (zatím bez registrace do hry)
         arcadeScene->addObject(std::move(target));
     }
 
-    // Nastavení osvětlení pro arkádu - jasné denní světlo
+    // Set lighting for arcade - bright daylight
     mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programTargets));
     mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programBg));
     mainLight->notifyObservers();
@@ -1656,8 +1630,7 @@ void Application::createArcadeScene() {
 
     addScene(std::move(arcadeScene));
     
-    // Teď registrujeme cíle do hry (po addScene, kdy mají správná ID)
-    // Pozadí je index 0, cíle jsou indexy 1-6
+    // Now register targets in the game (after addScene, when they have correct IDs)
     for (size_t i = 1; i < scenes.back()->getObjects().size(); ++i) {
         DrawableObject* obj = scenes.back()->getObjects()[i].get();
         Target* target = dynamic_cast<Target*>(obj);
