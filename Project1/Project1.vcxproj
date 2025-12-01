@@ -202,6 +202,7 @@
     <None Include="blinn.frag" />
     <None Include="common.vert" />
     <None Include="constant.frag" />
+    <None Include="phong-wrong.frag" />
     <None Include="phong.frag" />
     <None Include="skybox.frag" />
     <None Include="skybox.vert" />

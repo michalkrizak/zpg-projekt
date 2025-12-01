@@ -21,7 +21,7 @@ void main() {
     vec3 ra = objectColor;
     vec3 rd = objectColor; 
     vec3 rs = vec3(1.0);     
-    float h = 32.0;      
+    float h = 1.0;      
 
     vec3 Ia = vec3(0.01);   
     vec3 I_ambient = Ia * ra; 
@@ -50,11 +50,7 @@ void main() {
         // Diffuze
         // Id * rd * max(0, n . l)
         float dot_n_l = max(dot(n, l), 0.0);
-
-        if (dot_n_l <= 0.0) {
-            continue;
-        }
-
+        
         vec3 I_diffuse = Id_source * rd * dot_n_l;
         
         // Specular

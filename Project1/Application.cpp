@@ -181,15 +181,9 @@ Application::Application(int width, int height, const std::string& title)
     staticLights.push_back(LightData::createDirectional(
         glm::vec3(-0.2f, -1.0f, -0.3f),
         glm::vec3(0.15f, 0.15f, 0.2f),
-        0.3f
-    ));
-    
-    // 3. Point light (fire)
-    staticLights.push_back(LightData(
-        glm::vec3(5.0f, 1.0f, 5.0f),
-        glm::vec3(1.0f, 0.6f, 0.2f),
         1.0f
     ));
+
 }
 
 void Application::initialize() {
@@ -394,9 +388,6 @@ void Application::createForestScene() {
         forest->addObject(std::move(obj));
     }
 
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programForest));
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programGround));
-    mainLight->notifyObservers();
 
     // Create fireflies - glowing spheres with dynamic lights
     Shader* vsEmissive = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
@@ -622,7 +613,8 @@ void Application::createSphereScene() {
     float sphereScale = 1.0f;
 
     Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fsUniversal = Shader::createFromFile(GL_FRAGMENT_SHADER, "universal.frag");
+    Shader* fsUniversal = Shader::createFromFile(GL_FRAGMENT_SHADER, "phong.frag");
+    //Shader* fsUniversal = Shader::createFromFile(GL_FRAGMENT_SHADER, "phong-wrong.frag");
     auto programUniversal = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsUniversal});
 
     // Sphere 1: Constant
@@ -669,17 +661,6 @@ void Application::createSphereScene() {
     obj4->setColor(glm::vec3(0.9f, 0.3f, 0.3f));
     sphereScene->addObject(std::move(obj4));
 
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programUniversal));
-    mainLight->notifyObservers();
-
-    // Additional lights for demonstration
-    auto light2 = std::make_shared<Light>(glm::vec3(3.0f, 2.0f, 0.0f), glm::vec3(1.0f, 0.3f, 0.3f));
-    light2->addObserver(std::static_pointer_cast<ILightObserver>(programUniversal));
-    light2->notifyObservers();
-
-    auto light3 = std::make_shared<Light>(glm::vec3(-3.0f, 2.0f, 0.0f), glm::vec3(0.3f, 1.0f, 0.3f));
-    light3->addObserver(std::static_pointer_cast<ILightObserver>(programUniversal));
-    light3->notifyObservers();
 
     if (camera) {
         int fbWidth = 0, fbHeight = 0;
@@ -718,53 +699,71 @@ void Application::createTriangleScene() {
 }
 
 void Application::createBackfaceTestScene() {
-    auto testScene = std::make_unique<Scene>();
-
+    auto sphereScene = std::make_unique<Scene>();
     float sphereDistance = 2.0f;
     float sphereScale = 1.0f;
 
     Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* phongWrong = Shader::createFromFile(GL_FRAGMENT_SHADER, "phong-wrong.frag");
     Shader* fsUniversal = Shader::createFromFile(GL_FRAGMENT_SHADER, "universal.frag");
-    Shader* fsWrong = Shader::createFromFile(GL_FRAGMENT_SHADER, "phong_wrong_backside.frag");
-    auto programUniversal = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsUniversal});
-    auto programWrong = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsWrong});
 
-    // Sphere 1: Phong CORRECT (right side)
+    auto programUniversal = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsUniversal});
+    auto programWrongPhong = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, phongWrong});
+
+    // Sphere 1: Constant
     auto m1 = std::make_unique<Model>(sphere, sphereDataSize, 6);
     auto obj1 = std::make_unique<DrawableObject>(std::move(m1), programUniversal);
     auto t1 = std::make_unique<TransformComposite>();
     t1->addTransformation(std::make_unique<Translate>(sphereDistance, 0.0f, 0.0f));
     t1->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
     obj1->getTransform().addTransformation(std::move(t1));
-    obj1->setModelType(2);
-    obj1->setColor(glm::vec3(0.8f, 0.8f, 0.8f)); // Neutral gray
-    testScene->addObject(std::move(obj1));
+    obj1->setModelType(0);
+    obj1->setColor(glm::vec3(1.0f, 0.8f, 0.2f));
+    sphereScene->addObject(std::move(obj1));
 
-    // Sphere 2: WRONG (left side) - should be incorrectly lit on camera-facing side due to abs(dot)
+    // Sphere 2: Lambert
     auto m2 = std::make_unique<Model>(sphere, sphereDataSize, 6);
-    auto obj2 = std::make_unique<DrawableObject>(std::move(m2), programWrong);
+    auto obj2 = std::make_unique<DrawableObject>(std::move(m2), programUniversal);
     auto t2 = std::make_unique<TransformComposite>();
     t2->addTransformation(std::make_unique<Translate>(-sphereDistance, 0.0f, 0.0f));
     t2->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
     obj2->getTransform().addTransformation(std::move(t2));
-    obj2->setColor(glm::vec3(0.8f, 0.8f, 0.8f)); // Same neutral gray
-    testScene->addObject(std::move(obj2));
+    obj2->setModelType(1);
+    obj2->setColor(glm::vec3(0.2f, 0.8f, 0.2f));
+    sphereScene->addObject(std::move(obj2));
 
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programUniversal));
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programWrong));
-    mainLight->notifyObservers();
+    // Sphere 3: Phong
+    auto m3 = std::make_unique<Model>(sphere, sphereDataSize, 6);
+    auto obj3 = std::make_unique<DrawableObject>(std::move(m3), programWrongPhong);
+    auto t3 = std::make_unique<TransformComposite>();
+    t3->addTransformation(std::make_unique<Translate>(0.0f, sphereDistance, 0.0f));
+    t3->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
+    obj3->getTransform().addTransformation(std::move(t3));
+    //obj3->setModelType(2);
+    obj3->setColor(glm::vec3(0.2f, 0.6f, 1.0f));
+    sphereScene->addObject(std::move(obj3));
+
+    // Sphere 4: Blinn-Phong
+    auto m4 = std::make_unique<Model>(sphere, sphereDataSize, 6);
+    auto obj4 = std::make_unique<DrawableObject>(std::move(m4), programUniversal);
+    auto t4 = std::make_unique<TransformComposite>();
+    t4->addTransformation(std::make_unique<Translate>(0.0f, -sphereDistance, 0.0f));
+    t4->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
+    obj4->getTransform().addTransformation(std::move(t4));
+    obj4->setModelType(3);
+    obj4->setColor(glm::vec3(0.9f, 0.3f, 0.3f));
+    sphereScene->addObject(std::move(obj4));
+
 
     if (camera) {
         int fbWidth = 0, fbHeight = 0;
         glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
         float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
         programUniversal->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
-        programWrong->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
         camera->addObserver(std::static_pointer_cast<ICameraObserver>(programUniversal));
-        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programWrong));
     }
 
-    addScene(std::move(testScene));
+    addScene(std::move(sphereScene));
 }
 void Application::createSolarScene() {
     auto solarScene = std::make_unique<Scene>();
@@ -1157,10 +1156,6 @@ void Application::createTreePlantingScene() {
         plantingScene->addObject(std::move(obj));
     }
 
-    // Setup lighting
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programTrees));
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programGround));
-    mainLight->notifyObservers();
 
     if (camera) {
         int fbWidth = 0, fbHeight = 0;
@@ -1191,8 +1186,22 @@ void Application::updateDynamicLights() {
         // Assemble all lights into one list
         std::vector<LightData> allLights;
 
-        // 1. Add static lights (ambient, directional, point)
-        allLights.insert(allLights.end(), staticLights.begin(), staticLights.end());
+        // 1. Add static lights (ambient, directional, point) - only for forest scene
+        if (activeSceneIndex == 0) {
+
+            allLights.insert(allLights.end(), staticLights.begin(), staticLights.end());
+        }
+
+        if (activeSceneIndex == 1 || activeSceneIndex == 4) {
+
+            allLights.push_back(LightData::createAmbient(glm::vec3(0.3f, 0.3f, 0.3f), 0.5f));
+
+            LightData centerLight(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.95f, 0.8f), 3.0f);
+            centerLight.constant = 1.0f;
+            centerLight.linear = 0.02f;
+            centerLight.quadratic = 0.001f;
+            allLights.push_back(centerLight);
+        }
 
         // 1a. For planetary scene (index 3) add strong lighting for planet visibility
         if (activeSceneIndex == 3) {
@@ -1207,17 +1216,17 @@ void Application::updateDynamicLights() {
         
         // 1b. For tree planting scene (index 5) add bright daylight
         if (activeSceneIndex == 5) {
-            allLights.push_back(LightData::createAmbient(glm::vec3(0.4f, 0.45f, 0.5f), 0.8f));
+            allLights.push_back(LightData::createAmbient(glm::vec3(0.4f, 0.45f, 0.5f), 0.6f));
             allLights.push_back(LightData::createDirectional(
                 glm::vec3(-0.3f, -1.0f, -0.2f),
                 glm::vec3(1.0f, 0.95f, 0.8f),
-                2.0f
+                1.2f
             ));
         }
         
         // 1c. For formula scene (index 6) add brighter ambient
         if (activeSceneIndex == 6) {
-            allLights.push_back(LightData::createAmbient(glm::vec3(0.2f, 0.2f, 0.2f), 0.6f));
+            allLights.push_back(LightData::createAmbient(glm::vec3(1.4f, 1.4f, 1.4f), 1.6f));
             allLights.push_back(LightData::createDirectional(
                 glm::vec3(-0.2f, -1.0f, -0.15f),
                 glm::vec3(1.0f, 0.98f, 0.95f),
@@ -1311,11 +1320,11 @@ void Application::handleMouseClick(double xpos, double ypos) {
             obj->setSelected(true);
             
             // Calculate position in global coordinate system
-            glm::vec3 screenX = glm::vec3(x, newy, depth);
+           /* glm::vec3 screenX = glm::vec3(x, newy, depth);
             glm::mat4 view = camera->getViewMatrix();
             glm::mat4 projection = camera->getProjectionMatrix(fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f);
             glm::vec4 viewPort = glm::vec4(0, 0, fbWidth, fbHeight);
-            glm::vec3 pos = glm::unProject(screenX, view, projection, viewPort);
+            glm::vec3 pos = glm::unProject(screenX, view, projection, viewPort);*/
             
             printf("Selected object with ID: %u\n", index);
         }
@@ -1373,10 +1382,7 @@ void Application::plantTreeAtClick(double xpos, double ypos) {
     // Setup camera for new shader program
     program->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
     camera->addObserver(std::static_pointer_cast<ICameraObserver>(program));
-    
-    // Setup lighting for new shader program
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(program));
-    mainLight->notifyObservers();
+
     
     auto m = std::make_unique<Model>(tree, treeDataSize, 6);
     auto treeObj = std::make_unique<DrawableObject>(std::move(m), program);
@@ -1484,10 +1490,7 @@ void Application::createCustomBezierFormula() {
         program->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
         camera->addObserver(std::static_pointer_cast<ICameraObserver>(program));
     }
-    
-    // Setup lighting for new shader program
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(program));
-    mainLight->notifyObservers();
+
     
     auto formulaTexture = std::make_shared<Texture>("assets/textures/shrek.png");
     auto model = Model::loadFromOBJ("assets/formula1.obj");
@@ -1613,10 +1616,6 @@ void Application::createArcadeScene() {
         arcadeScene->addObject(std::move(target));
     }
 
-    // Set lighting for arcade - bright daylight
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programTargets));
-    mainLight->addObserver(std::static_pointer_cast<ILightObserver>(programBg));
-    mainLight->notifyObservers();
 
     if (camera) {
         int fbWidth = 0, fbHeight = 0;

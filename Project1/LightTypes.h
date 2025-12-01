@@ -2,31 +2,30 @@
 #include <glm/glm.hpp>
 
 enum class LightType {
-    POINT,        // Bodove svetlo
-    DIRECTIONAL,  // Smerove svetlo (slunce, mesic)
-    SPOT,         // Reflektor (baterka)
-    AMBIENT       // Ambientni osvetleni
+    POINT,        // Point light
+    DIRECTIONAL,  // (sun, moon)
+    SPOT,         // Reflector (flashlight)
+    AMBIENT       // Ambient
 };
 
 struct LightData {
     LightType type;
-    glm::vec3 position;      // Pro POINT a SPOT
-    glm::vec3 direction;     // Pro DIRECTIONAL a SPOT
+    glm::vec3 position;      // For POINT and SPOT
+    glm::vec3 direction;     // For DIRECTIONAL and SPOT
     glm::vec3 color;
     float intensity;
 
-    // Pro SPOT svetlo (baterka)
-    float cutOff;            // Vnitrni uhel (v radiinech)
-    float outerCutOff;       // Vnejsi uhel (v radiinech)
+    // for SPOT light
+    float cutOff;    
+    float outerCutOff;
 
-    // Attenuation (utlum) pro POINT a SPOT
+    // Attenuation
     float constant;
     float linear;
     float quadratic;
 
-    bool enabled;            // Zapnuto/vypnuto
+    bool enabled;           
 
-    // Konstruktor pro bodove svetlo
     LightData(const glm::vec3& pos, const glm::vec3& col, float inten = 1.0f)
         : type(LightType::POINT)
         , position(pos)
@@ -41,7 +40,6 @@ struct LightData {
         , enabled(true)
     {}
 
-    // Konstruktor pro smerove svetlo
     static LightData createDirectional(const glm::vec3& dir, const glm::vec3& col, float inten = 1.0f) {
         LightData light(glm::vec3(0.0f), col, inten);
         light.type = LightType::DIRECTIONAL;
@@ -49,7 +47,6 @@ struct LightData {
         return light;
     }
 
-    // Konstruktor pro reflektor (baterka)
     static LightData createSpot(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& col,
         float cutOffAngle = 12.5f, float outerCutOffAngle = 17.5f, float inten = 1.0f) {
         LightData light(pos, col, inten);
@@ -63,7 +60,7 @@ struct LightData {
         return light;
     }
 
-    // Konstruktor pro ambientni svetlo
+
     static LightData createAmbient(const glm::vec3& col, float inten = 0.1f) {
         LightData light(glm::vec3(0.0f), col, inten);
         light.type = LightType::AMBIENT;

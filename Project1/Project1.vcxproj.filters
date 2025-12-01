@@ -229,5 +229,8 @@
     <None Include="skybox.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="phong-wrong.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
