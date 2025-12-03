@@ -21,9 +21,9 @@ public:
         float time = static_cast<float>(glfwGetTime());
         float angle = time * orbitSpeed + phase;
 
-        // Kruhový pohyb v XZ rovinì
+        // round move
         float x = centerPosition.x + orbitRadius * std::cos(angle);
-        float y = centerPosition.y + verticalAmplitude * std::sin(angle * 2.0f); // Vertikální kolísání
+		float y = centerPosition.y + verticalAmplitude * std::sin(angle * 2.0f); // vertical oscillation
         float z = centerPosition.z + orbitRadius * std::sin(angle);
 
         setPosition(glm::vec3(x, y, z));

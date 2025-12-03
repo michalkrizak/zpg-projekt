@@ -189,46 +189,12 @@ Application::Application(int width, int height, const std::string& title)
 void Application::initialize() {
     createForestScene();
     createSphereScene();
-    createTriangleScene();
+    createLoginScene();
     createSolarScene();
     createBackfaceTestScene();
     createTreePlantingScene();
     createFormulaScene();
     createArcadeScene();
-}
-
-void Application::addScene(std::unique_ptr<Scene> scene) {
-    // Assign unique IDs to pickable objects
-    for (const auto& obj : scene->getObjects()) {
-        obj->setID(nextObjectID++);
-    }
-    
-    scenes.push_back(std::move(scene));
-    if (camera) {
-        int fbWidth=0, fbHeight=0; glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
-        float aspect = fbHeight>0? static_cast<float>(fbWidth)/fbHeight : 1.0f;
-        auto& scn = scenes.back();
-        for (auto& sp : scn->getShaderPrograms()) {
-            sp->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
-            camera->addObserver(sp);
-        }
-    }
-}
-
-
-void Application::setActiveScene(size_t index) {
-    if (index < scenes.size()) {
-        activeSceneIndex = index;
-        std::cout << "Prepnuto na scenu " << index << std::endl;
-        if (camera) {
-            int fbWidth=0, fbHeight=0; glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
-            float aspect = fbHeight>0? static_cast<float>(fbWidth)/fbHeight : 1.0f;
-            for (auto& sp : scenes[activeSceneIndex]->getShaderPrograms()) {
-                sp->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
-                camera->addObserver(sp);
-            }
-        }
-    }
 }
 
 void Application::run() {
@@ -279,6 +245,40 @@ void Application::run() {
     }
 }
 
+void Application::addScene(std::unique_ptr<Scene> scene) {
+    // Assign unique IDs to pickable objects
+    for (const auto& obj : scene->getObjects()) {
+        obj->setID(nextObjectID++);
+    }
+    
+    scenes.push_back(std::move(scene));
+    if (camera) {
+        int fbWidth=0, fbHeight=0; glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
+        float aspect = fbHeight>0? static_cast<float>(fbWidth)/fbHeight : 1.0f;
+        auto& scn = scenes.back();
+        for (auto& sp : scn->getShaderPrograms()) {
+            sp->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+            camera->addObserver(sp);
+        }
+    }
+}
+
+
+void Application::setActiveScene(size_t index) {
+    if (index < scenes.size()) {
+        activeSceneIndex = index;
+        std::cout << "Switched to scene " << index << std::endl;
+        if (camera) {
+            int fbWidth=0, fbHeight=0; glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
+            float aspect = fbHeight>0? static_cast<float>(fbWidth)/fbHeight : 1.0f;
+            for (auto& sp : scenes[activeSceneIndex]->getShaderPrograms()) {
+                sp->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+                camera->addObserver(sp);
+            }
+        }
+    }
+}
+
 void Application::createForestScene() {
     // Forest shaders - using advanced_lighting.frag for all light types support
     Shader* vsForest = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
@@ -287,7 +287,7 @@ void Application::createForestScene() {
 
     // Ground shaders
     Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fsg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
+    Shader* fsg = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
     auto programGround = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsg, fsg});
 
     auto forest = std::make_unique<Scene>();
@@ -391,7 +391,7 @@ void Application::createForestScene() {
 
     // Create fireflies - glowing spheres with dynamic lights
     Shader* vsEmissive = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fsEmissive = Shader::createFromFile(GL_FRAGMENT_SHADER, "emissive.frag");
+    Shader* fsEmissive = Shader::createFromFile(GL_FRAGMENT_SHADER, "constant.frag");
     auto programEmissive = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsEmissive, fsEmissive});
     
     std::uniform_real_distribution<float> distFireflyPos(-12.0f, 12.0f);
@@ -400,10 +400,8 @@ void Application::createForestScene() {
     std::uniform_real_distribution<float> distFireflyRadius(1.5f, 3.5f);
     std::uniform_real_distribution<float> distFireflyHeight(0.05f, 0.35f);
     
-    // Various colors for fireflies (green, yellow, warm white) - high intensity for visible light
-    std::vector<glm::vec3> fireflyColors = {
-        glm::vec3(2.0f, 1.8f, 0.5f)
-    };
+    // color for fireflie
+    glm::vec3 fireflyColor = glm::vec3(2.0f, 1.8f, 0.5f);
     
     // Create 12 fireflies as DrawableObject + DynamicLight
     for (int i = 0; i < 12; ++i) {
@@ -421,7 +419,7 @@ void Application::createForestScene() {
             std::move(fireflyModel),
             programEmissive,
             glm::vec3(x, y, z),
-            fireflyColors[i % fireflyColors.size()],
+            fireflyColor,
             radius,
             speed,
             phase,
@@ -431,180 +429,15 @@ void Application::createForestScene() {
         Firefly* fireflyPtr = fireflyObj.get();
         forest->addObject(std::move(fireflyObj));
         
-    fireflyPtr->addObserver(std::static_pointer_cast<ILightObserver>(programForest));
-    fireflyPtr->addObserver(std::static_pointer_cast<ILightObserver>(programGround));
-    fireflyPtr->notifyObservers();
+        fireflyPtr->addObserver(std::static_pointer_cast<ILightObserver>(programForest));
+        fireflyPtr->addObserver(std::static_pointer_cast<ILightObserver>(programGround));
+        fireflyPtr->notifyObservers();
         
-    // Store non-owning pointer for per-frame updates
-    fireflies.push_back(fireflyPtr);
+        // Store non-owning pointer for per-frame updates
+        fireflies.push_back(fireflyPtr);
     }
-
-    // Skydome - large hemisphere/sphere with sky texture
-    /*auto skydomeTexture = std::make_shared<Texture>("assets/textures/skydome.png");
-    Shader* vsSkydome = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fsSkydome = Shader::createFromFile(GL_FRAGMENT_SHADER, "skydome.frag");
-    auto programSkydome = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSkydome, fsSkydome});
-    {
-        auto m = std::make_unique<Model>(sphere, sphereDataSize, 6);
-        auto skydome = std::make_unique<DrawableObject>(std::move(m), programSkydome);
-        skydome->setTexture(skydomeTexture);
-        skydome->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-        auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f));
-        t->addTransformation(std::make_unique<Scale>(50.0f, 50.0f, 50.0f));
-        skydome->getTransform().addTransformation(std::move(t));
-        skydome->setModelType(0);
-        forest->addObject(std::move(skydome));
-    }*/
 
     addScene(std::move(forest));
-}
-
-
-void Application::createFormulaScene() {
-    auto scene = std::make_unique<Scene>();
-
-    Shader* vs = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fs = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
-    auto program = std::make_shared<ShaderProgram>(std::vector<Shader*>{vs, fs});
-
-    // Load textures (if they exist, otherwise use colors only)
-    auto formulaTexture = std::make_shared<Texture>("assets/textures/shaded.png");
-    auto tungTexture = std::make_shared<Texture>("assets/textures/tung.png");
-    auto treeTexture = std::make_shared<Texture>("assets/textures/tree1.png");
-    auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
-    auto bubakTexture = std::make_shared<Texture>("assets/textures/bubak.png");
-
-    // Try loading the Formula 1 OBJ with Bezier spline path
-    auto model = Model::loadFromOBJ("assets/base.obj");
-    if (model) {
-        auto obj = std::make_unique<DrawableObject>(std::move(model), program);
-        obj->setTexture(formulaTexture);
-        auto t = std::make_unique<TransformComposite>();
-
-        std::vector<glm::vec3> splinePoints = {
-            glm::vec3(-6.0f, -1.0f, -6.0f), 
-            glm::vec3(-6.0f, -1.0f, -3.0f),  
-            glm::vec3(-5.0f, -1.0f, -1.0f), 
-            glm::vec3(-2.0f, -1.0f, -2.0f), 
-
-            glm::vec3(0.0f,  -1.0f, -3.0f),   
-            glm::vec3(2.0f,  -1.0f, -5.0f),    
-            glm::vec3(5.0f,  -1.0f, -4.0f),  
-
-            glm::vec3(6.0f,  -1.0f, -2.0f),    
-            glm::vec3(5.0f,  -1.0f,  0.0f),    
-            glm::vec3(-2.0f, -1.0f,  1.0f),  
-
-            glm::vec3(-5.0f, -1.0f,  2.0f),      
-            glm::vec3(-5.0f, -1.0f,  6.0f),      
-            glm::vec3(0.0f,  -1.0f,  6.0f),    
-
-            glm::vec3(4.0f,  -1.0f,  5.0f),   
-            glm::vec3(-4.0f,  -1.0f,  -14.0f),   
-            glm::vec3(-6.0f, -1.0f, -6.0f)      
-        };
-        
-        t->addTransformation(std::make_unique<BezierSplineTransform>(splinePoints, 20.0f, true, true));
-
-        //t->addTransformation(std::make_unique<Rotate>(glm::radians(90.0f), 0.0f, 1.0f, 0.0f));
-        t->addTransformation(std::make_unique<Scale>(0.6f, 0.6f, 0.6f));
-        obj->getTransform().addTransformation(std::move(t));
-        obj->setModelType(2); // Phong shading
-        obj->setColor(glm::vec3(0.9f, 0.1f, 0.1f)); 
-
-        obj->setMaterial(0.2f, 0.8f, 0.9f, 128.0f);
-        scene->addObject(std::move(obj));
-    }
-    else {
-        std::cerr << "Formula scene: failed to load assets/formula1.obj" << std::endl;
-    }
-
-    // Load additional assets and place them around with textures
-    // House with wood texture
-    if (auto m = Model::loadFromOBJ("assets/tung.obj")) {
-        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
-        obj->setTexture(tungTexture);
-        auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Translate>(-3.5f, -1.0f, -4.0f));
-        t->addTransformation(std::make_unique<Scale>(0.5f, 0.5f, 0.5f));
-        obj->getTransform().addTransformation(std::move(t));
-        obj->setModelType(2);
-        obj->setColor(glm::vec3(0.8f, 0.6f, 0.3f));
-        scene->addObject(std::move(obj));
-    }
-    else {
-        std::cerr << "Formula scene: failed to load assets/house.obj" << std::endl;
-    }
-
-    // Cube with metal texture
-    if (auto m = Model::loadFromOBJ("assets/tree1.obj")) {
-        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
-        obj->setTexture(treeTexture);
-        auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Translate>(3.0f, -1.0f, -3.0f));
-        t->addTransformation(std::make_unique<Scale>(0.7f, 0.7f, 0.7f));
-        obj->getTransform().addTransformation(std::move(t));
-        obj->setModelType(2);
-        obj->setColor(glm::vec3(0.7f, 0.7f, 0.9f));
-        scene->addObject(std::move(obj));
-    }
-    else {
-        std::cerr << "Formula scene: failed to load assets/tree1.obj" << std::endl;
-    }
-
-    // Square without texture (keep original)
-    if (auto m = Model::loadFromOBJ("assets/bubak.obj")) {
-        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
-        obj->setTexture(bubakTexture);
-        auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Translate>(-1.0f, -1.0f, 2.5f));
-        t->addTransformation(std::make_unique<Scale>(1.0f, 1.0f, 1.0f));
-        obj->getTransform().addTransformation(std::move(t));
-        obj->setModelType(2);
-        obj->setColor(glm::vec3(0.2f, 0.2f, 0.25f));
-        scene->addObject(std::move(obj));
-    }
-    else {
-        std::cerr << "Formula scene: failed to load assets/buabk.obj" << std::endl;
-    }
-
-    // Optional: simple ground under the model for reference with texture
-    Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fsg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
-    auto groundProgram = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsg, fsg});
-    {
-        auto m = std::make_unique<Model>(plain, plainDataSize, 6);
-        auto ground = std::make_unique<DrawableObject>(std::move(m), groundProgram);
-        ground->setTexture(groundTexture);
-        ground->setColor(glm::vec3(0.12f, 0.12f, 0.12f));
-        // Material: matte asphalt (low ambient, full diffuse, minimal specular, low shininess)
-        ground->setMaterial(0.1f, 1.0f, 0.05f, 8.0f);
-        auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f));
-        t->addTransformation(std::make_unique<Scale>(10.0f, 1.0f, 10.0f));
-        ground->getTransform().addTransformation(std::move(t));
-        scene->addObject(std::move(ground));
-    }
-
-    // Add skybox
-    Shader* vsSkybox = Shader::createFromFile(GL_VERTEX_SHADER, "skybox.vert");
-    Shader* fsSkybox = Shader::createFromFile(GL_FRAGMENT_SHADER, "skybox.frag");
-    auto skyboxProgram = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSkybox, fsSkybox});
-
-    std::vector<std::string> cubemapFaces = {
-        "assets/textures/cubemap/posx.jpg",
-        "assets/textures/cubemap/negx.jpg",
-        "assets/textures/cubemap/posy.jpg",
-        "assets/textures/cubemap/negy.jpg",
-        "assets/textures/cubemap/posz.jpg",
-        "assets/textures/cubemap/negz.jpg"
-    };
-
-    auto skybox = std::make_unique<Skybox>(cubemapFaces, skyboxProgram);
-    scene->setSkybox(std::move(skybox));
-
-    addScene(std::move(scene));
 }
 
 void Application::createSphereScene() {
@@ -673,98 +506,41 @@ void Application::createSphereScene() {
     addScene(std::move(sphereScene));
 }
 
-void Application::createTriangleScene() {
-    auto triangleScene = std::make_unique<Scene>();
-    static const float triVerts[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
-    };
-    auto triModel = std::make_unique<Model>(triVerts, sizeof(triVerts), 3);
-    Shader* vsTri = Shader::createFromFile(GL_VERTEX_SHADER, "tri.vert");
-    Shader* fsTri = Shader::createFromFile(GL_FRAGMENT_SHADER, "tri.frag");
-    auto programTri = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsTri, fsTri});
-    auto triObj = std::make_unique<DrawableObject>(std::move(triModel), programTri);
-    triangleScene->addObject(std::move(triObj));
+void Application::createLoginScene() {
+
+    Shader* vsForest = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsForest = Shader::createFromFile(GL_FRAGMENT_SHADER, "universal.frag");
+    auto programLogin = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsForest, fsForest});
+
+
+    auto loginScene = std::make_unique<Scene>();
+
+
+    auto model = Model::loadFromOBJ("assets/login.obj");
+    if (model) {
+        auto obj = std::make_unique<DrawableObject>(std::move(model), programLogin);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Scale>(1.0f, 1.0f, 1.0f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        obj->setModelType(2);
+        // Material: ambient=0.3, diffuse=0.9, specular=0.3, shininess=32 (well-lit plastic/ceramic)
+        obj->setMaterial(0.3f, 0.9f, 0.3f, 32.0f);
+
+        loginScene->addObject(std::move(obj));
+    }
 
     if (camera) {
         int fbWidth = 0, fbHeight = 0;
         glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
         float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
-        programTri->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
-        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programTri));
+        programLogin->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programLogin));
     }
 
-    addScene(std::move(triangleScene));
+    addScene(std::move(loginScene));
 }
 
-void Application::createBackfaceTestScene() {
-    auto sphereScene = std::make_unique<Scene>();
-    float sphereDistance = 2.0f;
-    float sphereScale = 1.0f;
-
-    Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* phongWrong = Shader::createFromFile(GL_FRAGMENT_SHADER, "phong-wrong.frag");
-    Shader* fsUniversal = Shader::createFromFile(GL_FRAGMENT_SHADER, "universal.frag");
-
-    auto programUniversal = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsUniversal});
-    auto programWrongPhong = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, phongWrong});
-
-    // Sphere 1: Constant
-    auto m1 = std::make_unique<Model>(sphere, sphereDataSize, 6);
-    auto obj1 = std::make_unique<DrawableObject>(std::move(m1), programUniversal);
-    auto t1 = std::make_unique<TransformComposite>();
-    t1->addTransformation(std::make_unique<Translate>(sphereDistance, 0.0f, 0.0f));
-    t1->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
-    obj1->getTransform().addTransformation(std::move(t1));
-    obj1->setModelType(0);
-    obj1->setColor(glm::vec3(1.0f, 0.8f, 0.2f));
-    sphereScene->addObject(std::move(obj1));
-
-    // Sphere 2: Lambert
-    auto m2 = std::make_unique<Model>(sphere, sphereDataSize, 6);
-    auto obj2 = std::make_unique<DrawableObject>(std::move(m2), programUniversal);
-    auto t2 = std::make_unique<TransformComposite>();
-    t2->addTransformation(std::make_unique<Translate>(-sphereDistance, 0.0f, 0.0f));
-    t2->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
-    obj2->getTransform().addTransformation(std::move(t2));
-    obj2->setModelType(1);
-    obj2->setColor(glm::vec3(0.2f, 0.8f, 0.2f));
-    sphereScene->addObject(std::move(obj2));
-
-    // Sphere 3: Phong
-    auto m3 = std::make_unique<Model>(sphere, sphereDataSize, 6);
-    auto obj3 = std::make_unique<DrawableObject>(std::move(m3), programWrongPhong);
-    auto t3 = std::make_unique<TransformComposite>();
-    t3->addTransformation(std::make_unique<Translate>(0.0f, sphereDistance, 0.0f));
-    t3->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
-    obj3->getTransform().addTransformation(std::move(t3));
-    //obj3->setModelType(2);
-    obj3->setColor(glm::vec3(0.2f, 0.6f, 1.0f));
-    sphereScene->addObject(std::move(obj3));
-
-    // Sphere 4: Blinn-Phong
-    auto m4 = std::make_unique<Model>(sphere, sphereDataSize, 6);
-    auto obj4 = std::make_unique<DrawableObject>(std::move(m4), programUniversal);
-    auto t4 = std::make_unique<TransformComposite>();
-    t4->addTransformation(std::make_unique<Translate>(0.0f, -sphereDistance, 0.0f));
-    t4->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
-    obj4->getTransform().addTransformation(std::move(t4));
-    obj4->setModelType(3);
-    obj4->setColor(glm::vec3(0.9f, 0.3f, 0.3f));
-    sphereScene->addObject(std::move(obj4));
-
-
-    if (camera) {
-        int fbWidth = 0, fbHeight = 0;
-        glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
-        float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
-        programUniversal->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
-        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programUniversal));
-    }
-
-    addScene(std::move(sphereScene));
-}
 void Application::createSolarScene() {
     auto solarScene = std::make_unique<Scene>();
 
@@ -1103,6 +879,75 @@ void Application::createSolarScene() {
     addScene(std::move(solarScene));
 }
 
+void Application::createBackfaceTestScene() {
+    auto sphereScene = std::make_unique<Scene>();
+    float sphereDistance = 2.0f;
+    float sphereScale = 1.0f;
+
+    Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* phongWrong = Shader::createFromFile(GL_FRAGMENT_SHADER, "phong-wrong.frag");
+    Shader* fsUniversal = Shader::createFromFile(GL_FRAGMENT_SHADER, "universal.frag");
+
+    auto programUniversal = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsUniversal});
+    auto programWrongPhong = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, phongWrong});
+
+    // Sphere 1: Constant
+    auto m1 = std::make_unique<Model>(sphere, sphereDataSize, 6);
+    auto obj1 = std::make_unique<DrawableObject>(std::move(m1), programUniversal);
+    auto t1 = std::make_unique<TransformComposite>();
+    t1->addTransformation(std::make_unique<Translate>(sphereDistance, 0.0f, 0.0f));
+    t1->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
+    obj1->getTransform().addTransformation(std::move(t1));
+    obj1->setModelType(0);
+    obj1->setColor(glm::vec3(1.0f, 0.8f, 0.2f));
+    sphereScene->addObject(std::move(obj1));
+
+    // Sphere 2: Lambert
+    auto m2 = std::make_unique<Model>(sphere, sphereDataSize, 6);
+    auto obj2 = std::make_unique<DrawableObject>(std::move(m2), programUniversal);
+    auto t2 = std::make_unique<TransformComposite>();
+    t2->addTransformation(std::make_unique<Translate>(-sphereDistance, 0.0f, 0.0f));
+    t2->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
+    obj2->getTransform().addTransformation(std::move(t2));
+    obj2->setModelType(1);
+    obj2->setColor(glm::vec3(0.2f, 0.8f, 0.2f));
+    sphereScene->addObject(std::move(obj2));
+
+    // Sphere 3: Phong
+    auto m3 = std::make_unique<Model>(sphere, sphereDataSize, 6);
+    auto obj3 = std::make_unique<DrawableObject>(std::move(m3), programWrongPhong);
+    auto t3 = std::make_unique<TransformComposite>();
+    t3->addTransformation(std::make_unique<Translate>(0.0f, sphereDistance, 0.0f));
+    t3->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
+    obj3->getTransform().addTransformation(std::move(t3));
+    //obj3->setModelType(2);
+    obj3->setColor(glm::vec3(0.2f, 0.6f, 1.0f));
+    sphereScene->addObject(std::move(obj3));
+
+    // Sphere 4: Blinn-Phong
+    auto m4 = std::make_unique<Model>(sphere, sphereDataSize, 6);
+    auto obj4 = std::make_unique<DrawableObject>(std::move(m4), programUniversal);
+    auto t4 = std::make_unique<TransformComposite>();
+    t4->addTransformation(std::make_unique<Translate>(0.0f, -sphereDistance, 0.0f));
+    t4->addTransformation(std::make_unique<Scale>(sphereScale, sphereScale, sphereScale));
+    obj4->getTransform().addTransformation(std::move(t4));
+    obj4->setModelType(3);
+	obj4->setMaterial(0.2f, 0.8f, 0.5f, 16.0f);
+    obj4->setColor(glm::vec3(0.9f, 0.3f, 0.3f));
+    sphereScene->addObject(std::move(obj4));
+
+
+    if (camera) {
+        int fbWidth = 0, fbHeight = 0;
+        glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
+        float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+        programUniversal->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programUniversal));
+    }
+
+    addScene(std::move(sphereScene));
+}
+
 void Application::createTreePlantingScene() {
     auto plantingScene = std::make_unique<Scene>();
 
@@ -1170,6 +1015,310 @@ void Application::createTreePlantingScene() {
     addScene(std::move(plantingScene));
 }
 
+void Application::createFormulaScene() {
+    auto scene = std::make_unique<Scene>();
+
+    Shader* vs = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fs = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
+    auto program = std::make_shared<ShaderProgram>(std::vector<Shader*>{vs, fs});
+
+    // Load textures (if they exist, otherwise use colors only)
+    auto formulaTexture = std::make_shared<Texture>("assets/textures/shaded.png");
+    auto tungTexture = std::make_shared<Texture>("assets/textures/tung.png");
+    auto treeTexture = std::make_shared<Texture>("assets/textures/tree1.png");
+    auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
+    auto bubakTexture = std::make_shared<Texture>("assets/textures/bubak.png");
+    auto santaTexture = std::make_shared<Texture>("assets/textures/santa.png");
+    auto tableTexture = std::make_shared<Texture>("assets/textures/table.png");
+
+    // Try loading the Formula 1 OBJ with Bezier spline path
+    auto model = Model::loadFromOBJ("assets/base.obj");
+    if (model) {
+        auto obj = std::make_unique<DrawableObject>(std::move(model), program);
+        obj->setTexture(formulaTexture);
+        auto t = std::make_unique<TransformComposite>();
+
+        std::vector<glm::vec3> splinePoints = {
+            glm::vec3(-6.0f, -1.0f, -6.0f), 
+            glm::vec3(-6.0f, -1.0f, -3.0f),  
+            glm::vec3(-5.0f, -1.0f, -1.0f), 
+            glm::vec3(-2.0f, -1.0f, -2.0f), 
+
+            glm::vec3(0.0f,  -1.0f, -3.0f),   
+            glm::vec3(2.0f,  -1.0f, -5.0f),    
+            glm::vec3(5.0f,  -1.0f, -4.0f),  
+
+            glm::vec3(6.0f,  -1.0f, -2.0f),    
+            glm::vec3(5.0f,  -1.0f,  0.0f),    
+            glm::vec3(-2.0f, -1.0f,  1.0f),  
+
+            glm::vec3(-5.0f, -1.0f,  2.0f),      
+            glm::vec3(-5.0f, -1.0f,  6.0f),      
+            glm::vec3(0.0f,  -1.0f,  6.0f),    
+
+            glm::vec3(4.0f,  -1.0f,  5.0f),   
+            glm::vec3(-4.0f,  -1.0f,  -14.0f),   
+            glm::vec3(-6.0f, -1.0f, -6.0f)      
+        };
+        
+        t->addTransformation(std::make_unique<BezierSplineTransform>(splinePoints, 20.0f, true, true));
+
+        //t->addTransformation(std::make_unique<Rotate>(glm::radians(90.0f), 0.0f, 1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(0.6f, 0.6f, 0.6f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2); // Phong shading
+        obj->setColor(glm::vec3(0.9f, 0.1f, 0.1f)); 
+
+        obj->setMaterial(0.2f, 1.0f, 0.9f, 128.0f);
+        scene->addObject(std::move(obj));
+    }
+    else {
+        std::cerr << "Formula scene: failed to load assets/formula1.obj" << std::endl;
+    }
+
+    // Load additional assets and place them around with textures
+    if (auto m = Model::loadFromOBJ("assets/tung.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+        obj->setTexture(tungTexture);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(-3.5f, -1.0f, -4.0f));
+        t->addTransformation(std::make_unique<Scale>(0.5f, 0.5f, 0.5f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        obj->setColor(glm::vec3(0.8f, 0.6f, 0.3f));
+        scene->addObject(std::move(obj));
+    }
+    else {
+        std::cerr << "Formula scene: failed to load assets/house.obj" << std::endl;
+    }
+
+    if (auto m = Model::loadFromOBJ("assets/santa.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+        obj->setTexture(santaTexture);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, -4.0f));
+        t->addTransformation(std::make_unique<Scale>(0.5f, 0.5f, 0.5f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        obj->setColor(glm::vec3(0.8f, 0.6f, 0.3f));
+        scene->addObject(std::move(obj));
+    }
+    else {
+        std::cerr << "Formula scene: failed to load assets/santa.obj" << std::endl;
+    }
+
+    // Cube with metal texture
+    if (auto m = Model::loadFromOBJ("assets/tree1.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+        obj->setTexture(treeTexture);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(3.0f, -1.0f, -3.0f));
+        t->addTransformation(std::make_unique<Scale>(0.7f, 0.7f, 0.7f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        obj->setColor(glm::vec3(0.7f, 0.7f, 0.9f));
+        scene->addObject(std::move(obj));
+    }
+    else {
+        std::cerr << "Formula scene: failed to load assets/tree1.obj" << std::endl;
+    }
+
+    // Square without texture (keep original)
+    if (auto m = Model::loadFromOBJ("assets/bubak.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+        obj->setTexture(bubakTexture);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(-1.0f, -1.0f, 2.5f));
+        t->addTransformation(std::make_unique<Scale>(1.0f, 1.0f, 1.0f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        obj->setColor(glm::vec3(0.2f, 0.2f, 0.25f));
+        scene->addObject(std::move(obj));
+    }
+    else {
+        std::cerr << "Formula scene: failed to load assets/buabk.obj" << std::endl;
+    }
+
+    if (auto m = Model::loadFromOBJ("assets/table.obj")) {
+        auto obj = std::make_unique<DrawableObject>(std::move(m), program);
+        obj->setTexture(tableTexture);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(0.0f, -13.55f, -2.0f));
+        t->addTransformation(std::make_unique<Scale>(15.0f, 15.0f, 16.0f));
+        obj->getTransform().addTransformation(std::move(t));
+        obj->setModelType(2);
+        obj->setColor(glm::vec3(0.15f, 0.15f, 0.18f));
+		obj->setMaterial(0.2f, 0.5f, 0.0f, 0.0f);  
+        scene->addObject(std::move(obj));
+    }
+    else {
+        std::cerr << "Formula scene: failed to load assets/table.obj" << std::endl;
+    }
+
+    // Optional: simple ground under the model for reference with texture
+  /*  Shader* vsg = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsg = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
+    auto groundProgram = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsg, fsg});
+    {
+        auto m = std::make_unique<Model>(plain, plainDataSize, 6);
+        auto ground = std::make_unique<DrawableObject>(std::move(m), groundProgram);
+        ground->setTexture(groundTexture);
+        ground->setColor(glm::vec3(0.12f, 0.12f, 0.12f));
+        // Material: matte asphalt (low ambient, full diffuse, minimal specular, low shininess)
+        ground->setMaterial(0.1f, 1.0f, 0.05f, 8.0f);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(0.0f, -1.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(10.0f, 1.0f, 10.0f));
+        ground->getTransform().addTransformation(std::move(t));
+        scene->addObject(std::move(ground));
+    }*/
+
+    // Add skybox
+    Shader* vsSkybox = Shader::createFromFile(GL_VERTEX_SHADER, "skybox.vert");
+    Shader* fsSkybox = Shader::createFromFile(GL_FRAGMENT_SHADER, "skybox.frag");
+    auto skyboxProgram = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsSkybox, fsSkybox});
+
+    /*std::vector<std::string> cubemapFaces = {
+        "assets/textures/cubemap/posx.jpg",
+        "assets/textures/cubemap/negx.jpg",
+        "assets/textures/cubemap/posy.jpg",
+        "assets/textures/cubemap/negy.jpg",
+        "assets/textures/cubemap/posz.jpg",
+        "assets/textures/cubemap/negz.jpg"
+    };*/
+
+    std::vector<std::string> cubemapFaces = {
+        "assets/textures/skybox/cube_right.png",   // +X
+        "assets/textures/skybox/cube_left.png",    // -X
+        "assets/textures/skybox/cube_up.png",      // +Y
+        "assets/textures/skybox/cube_down.png",    // -Y
+        "assets/textures/skybox/cube_back.png",    // +Z
+        "assets/textures/skybox/cube_front.png"    // -Z
+    };
+
+    auto skybox = std::make_unique<Skybox>(cubemapFaces, skyboxProgram);
+    scene->setSkybox(std::move(skybox));
+
+    addScene(std::move(scene));
+}
+
+void Application::createArcadeScene() {
+    // Reset object IDs for arcade scene to ensure they fit in 8-bit stencil buffer (0-255)
+    nextObjectID = 1;
+    
+    auto arcadeScene = std::make_unique<Scene>();
+
+    // Arcade shaders
+    Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsAdvanced = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
+    auto programTargets = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsAdvanced});
+
+    // Background/ground shader
+    Shader* vsBg = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
+    Shader* fsBg = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
+    auto programBg = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsBg, fsBg});
+
+    // Background texture
+    auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
+
+    // Create background/ground
+    {
+        auto m = std::make_unique<Model>(plain, plainDataSize, 6);
+        auto ground = std::make_unique<DrawableObject>(std::move(m), programBg);
+        ground->setTexture(groundTexture);
+        ground->setColor(glm::vec3(0.2f, 0.3f, 0.15f));
+        ground->setMaterial(0.2f, 1.0f, 0.05f, 8.0f);
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<Translate>(0.0f, -2.0f, 0.0f));
+        t->addTransformation(std::make_unique<Scale>(30.0f, 1.0f, 30.0f));
+        ground->getTransform().addTransformation(std::move(t));
+        ground->setModelType(2);
+        arcadeScene->addObject(std::move(ground));
+    }
+
+    // Create targets with random paths
+    std::vector<Target::TargetType> targetTypes = {
+        Target::TargetType::SPHERE,
+        Target::TargetType::SPHERE,
+        Target::TargetType::SPHERE,
+        Target::TargetType::CUBE,
+        Target::TargetType::CUBE,
+        Target::TargetType::GIFT
+    };
+
+    for (size_t i = 0; i < targetTypes.size(); ++i) {
+        Target::TargetType type = targetTypes[i];
+        std::unique_ptr<Model> model;
+        glm::vec3 color;
+        float scale = 0.3f;
+
+        // Select model based on target type
+        switch (type) {
+            case Target::TargetType::SPHERE:
+                model = std::make_unique<Model>(sphere, sphereDataSize, 6);
+                color = glm::vec3(0.2f, 0.6f, 1.0f);
+                scale = 0.3f;
+                break;
+            case Target::TargetType::CUBE:
+                if (auto m = Model::loadFromOBJ("assets/cube.obj")) {
+                    model = std::move(m);
+                } else {
+                    model = std::make_unique<Model>(sphere, sphereDataSize, 6);
+                }
+                color = glm::vec3(1.0f, 0.8f, 0.2f);
+                scale = 0.4f;
+                break;
+            case Target::TargetType::GIFT:
+                model = std::make_unique<Model>(gift, giftDataSize, 6);
+                color = glm::vec3(1.0f, 0.2f, 0.3f);
+                scale = 1.0f;
+                break;
+        }
+
+        auto target = std::make_unique<Target>(std::move(model), programTargets, type);
+        target->setColor(color);
+        target->setModelType(2);
+        target->setMaterial(1.0f, 1.0f, 0.6f, 32.0f);
+
+        // Generate random path (polyline with 3-5 points)
+        int numPoints = 3 + (i % 3);
+        auto path = arcadeGame.generateRandomPath(numPoints, -8.0f, 8.0f, -1.0f, 2.0f, -8.0f, 8.0f);
+        float duration = arcadeGame.getRandomDuration(3.0f, 8.0f);
+
+        auto t = std::make_unique<TransformComposite>();
+        t->addTransformation(std::make_unique<LinePathTransform>(path, duration, true));
+        t->addTransformation(std::make_unique<Scale>(scale, scale, scale));
+        target->getTransform().addTransformation(std::move(t));
+
+        arcadeScene->addObject(std::move(target));
+    }
+
+
+    if (camera) {
+        int fbWidth = 0, fbHeight = 0;
+        glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
+        float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
+        programTargets->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        programBg->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programTargets));
+        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programBg));
+    }
+
+    addScene(std::move(arcadeScene));
+    
+    // Now register targets in the game (after addScene, when they have correct IDs)
+    for (size_t i = 1; i < scenes.back()->getObjects().size(); ++i) {
+        DrawableObject* obj = scenes.back()->getObjects()[i].get();
+        Target* target = dynamic_cast<Target*>(obj);
+        if (target) {
+            arcadeGame.addTarget(target);
+            printf("Registered target with ID %u, points %d\n", target->getID(), target->getPointValue());
+        }
+    }
+    
+    printf("Arcade scene created with targets!\n");
+}
+
 void Application::updateDynamicLights() {
     // Update positions
     for (auto& light : dynamicLights) {
@@ -1203,6 +1352,29 @@ void Application::updateDynamicLights() {
             allLights.push_back(centerLight);
         }
 
+        // login scene
+        if (activeSceneIndex == 2) {
+            // Soft ambient light
+            allLights.push_back(LightData::createAmbient(glm::vec3(0.2f, 0.2f, 0.25f), 0.3f));
+            
+            // Main directional light from above and front
+            allLights.push_back(LightData::createDirectional(
+                glm::vec3(-0.2f, -1.0f, -0.5f),
+                glm::vec3(1.0f, 0.98f, 0.95f),
+                0.8f
+            ));
+            
+            // Point light close to object for fill light (reduces harsh shadows)
+            allLights.push_back(LightData::createPoint(
+                glm::vec3(0.5f, 1.0f, 1.5f),     // Position: slightly to right, above, and in front
+                glm::vec3(1.0f, 0.95f, 0.85f),   // Warm white color
+                1.5f,                             // Intensity
+                1.0f,                             // Constant attenuation
+                0.14f,                            // Linear attenuation
+                0.07f                             // Quadratic attenuation (reaches ~10 units)
+            ));
+        }
+
         // 1a. For planetary scene (index 3) add strong lighting for planet visibility
         if (activeSceneIndex == 3) {
             allLights.push_back(LightData::createAmbient(glm::vec3(0.3f, 0.3f, 0.3f), 0.5f));
@@ -1226,11 +1398,21 @@ void Application::updateDynamicLights() {
         
         // 1c. For formula scene (index 6) add brighter ambient
         if (activeSceneIndex == 6) {
-            allLights.push_back(LightData::createAmbient(glm::vec3(1.4f, 1.4f, 1.4f), 1.6f));
+            // Stronger ambient light for natural daylight
+            allLights.push_back(LightData::createAmbient(glm::vec3(0.8f, 0.8f, 0.85f), 1.2f));
+            
+            // Main sunlight from top-front angle
             allLights.push_back(LightData::createDirectional(
-                glm::vec3(-0.2f, -1.0f, -0.15f),
+                glm::vec3(0.3f, -0.7f, -0.5f),
                 glm::vec3(1.0f, 0.98f, 0.95f),
-                1.2f
+                1.8f
+            ));
+            
+            // Fill light from side for better model visibility
+            allLights.push_back(LightData::createDirectional(
+                glm::vec3(-0.5f, -0.3f, 0.4f),
+                glm::vec3(0.6f, 0.65f, 0.7f),
+                0.8f
             ));
         }
         
@@ -1337,9 +1519,9 @@ void Application::deleteSelectedObject() {
     if (activeSceneIndex >= scenes.size()) return;
     
     if (scenes[activeSceneIndex]->deleteSelectedObject()) {
-        std::cout << "Objekt byl smazan" << std::endl;
+        std::cout << "Objekt was deleted" << std::endl;
     } else {
-        std::cout << "Zadby objekt neni vybran k odstraneni" << std::endl;
+        std::cout << "No objekt was selected to be deleted" << std::endl;
     }
 }
 
@@ -1523,121 +1705,4 @@ void Application::createCustomBezierFormula() {
     } else {
         printf("ERROR: Failed to load formula1.obj\n");
     }
-}
-
-void Application::createArcadeScene() {
-    // Reset object IDs for arcade scene to ensure they fit in 8-bit stencil buffer (0-255)
-    nextObjectID = 1;
-    
-    auto arcadeScene = std::make_unique<Scene>();
-
-    // Arcade shaders
-    Shader* vsCommon = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fsAdvanced = Shader::createFromFile(GL_FRAGMENT_SHADER, "advanced_lighting.frag");
-    auto programTargets = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsCommon, fsAdvanced});
-
-    // Background/ground shader
-    Shader* vsBg = Shader::createFromFile(GL_VERTEX_SHADER, "common.vert");
-    Shader* fsBg = Shader::createFromFile(GL_FRAGMENT_SHADER, "ground.frag");
-    auto programBg = std::make_shared<ShaderProgram>(std::vector<Shader*>{vsBg, fsBg});
-
-    // Background texture
-    auto groundTexture = std::make_shared<Texture>("assets/textures/grass.png");
-
-    // Create background/ground
-    {
-        auto m = std::make_unique<Model>(plain, plainDataSize, 6);
-        auto ground = std::make_unique<DrawableObject>(std::move(m), programBg);
-        ground->setTexture(groundTexture);
-        ground->setColor(glm::vec3(0.2f, 0.3f, 0.15f));
-        ground->setMaterial(0.2f, 1.0f, 0.05f, 8.0f);
-        auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<Translate>(0.0f, -2.0f, 0.0f));
-        t->addTransformation(std::make_unique<Scale>(30.0f, 1.0f, 30.0f));
-        ground->getTransform().addTransformation(std::move(t));
-        ground->setModelType(2);
-        arcadeScene->addObject(std::move(ground));
-    }
-
-    // Create targets with random paths
-    std::vector<Target::TargetType> targetTypes = {
-        Target::TargetType::SPHERE,
-        Target::TargetType::SPHERE,
-        Target::TargetType::SPHERE,
-        Target::TargetType::CUBE,
-        Target::TargetType::CUBE,
-        Target::TargetType::GIFT
-    };
-
-    for (size_t i = 0; i < targetTypes.size(); ++i) {
-        Target::TargetType type = targetTypes[i];
-        std::unique_ptr<Model> model;
-        glm::vec3 color;
-        float scale = 0.3f;
-
-        // Select model based on target type
-        switch (type) {
-            case Target::TargetType::SPHERE:
-                model = std::make_unique<Model>(sphere, sphereDataSize, 6);
-                color = glm::vec3(0.2f, 0.6f, 1.0f);
-                scale = 0.3f;
-                break;
-            case Target::TargetType::CUBE:
-                if (auto m = Model::loadFromOBJ("assets/cube.obj")) {
-                    model = std::move(m);
-                } else {
-                    model = std::make_unique<Model>(sphere, sphereDataSize, 6);
-                }
-                color = glm::vec3(1.0f, 0.8f, 0.2f);
-                scale = 0.4f;
-                break;
-            case Target::TargetType::GIFT:
-                model = std::make_unique<Model>(gift, giftDataSize, 6);
-                color = glm::vec3(1.0f, 0.2f, 0.3f);
-                scale = 1.0f;
-                break;
-        }
-
-        auto target = std::make_unique<Target>(std::move(model), programTargets, type);
-        target->setColor(color);
-        target->setModelType(2);
-        target->setMaterial(0.2f, 1.0f, 0.6f, 32.0f);
-
-        // Generate random path (polyline with 3-5 points)
-        int numPoints = 3 + (i % 3);
-        auto path = arcadeGame.generateRandomPath(numPoints, -8.0f, 8.0f, -1.0f, 2.0f, -8.0f, 8.0f);
-        float duration = arcadeGame.getRandomDuration(3.0f, 8.0f);
-
-        auto t = std::make_unique<TransformComposite>();
-        t->addTransformation(std::make_unique<LinePathTransform>(path, duration, true));
-        t->addTransformation(std::make_unique<Scale>(scale, scale, scale));
-        target->getTransform().addTransformation(std::move(t));
-
-        arcadeScene->addObject(std::move(target));
-    }
-
-
-    if (camera) {
-        int fbWidth = 0, fbHeight = 0;
-        glfwGetFramebufferSize(window.getGLFWwindow(), &fbWidth, &fbHeight);
-        float aspect = fbHeight > 0 ? static_cast<float>(fbWidth) / fbHeight : 1.0f;
-        programTargets->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
-        programBg->setInitialViewProj(camera->getViewMatrix(), camera->getProjectionMatrix(aspect));
-        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programTargets));
-        camera->addObserver(std::static_pointer_cast<ICameraObserver>(programBg));
-    }
-
-    addScene(std::move(arcadeScene));
-    
-    // Now register targets in the game (after addScene, when they have correct IDs)
-    for (size_t i = 1; i < scenes.back()->getObjects().size(); ++i) {
-        DrawableObject* obj = scenes.back()->getObjects()[i].get();
-        Target* target = dynamic_cast<Target*>(obj);
-        if (target) {
-            arcadeGame.addTarget(target);
-            printf("Registered target with ID %u, points %d\n", target->getID(), target->getPointValue());
-        }
-    }
-    
-    printf("Arcade scene created with targets!\n");
 }

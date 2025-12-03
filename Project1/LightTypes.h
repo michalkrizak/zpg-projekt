@@ -66,4 +66,14 @@ struct LightData {
         light.type = LightType::AMBIENT;
         return light;
     }
+
+    static LightData createPoint(const glm::vec3& pos, const glm::vec3& col, float inten = 1.0f,
+        float constant = 1.0f, float linear = 0.09f, float quadratic = 0.032f) {
+        LightData light(pos, col, inten);
+        light.type = LightType::POINT;
+        light.constant = constant;
+        light.linear = linear;
+        light.quadratic = quadratic;
+        return light;
+    }
 };

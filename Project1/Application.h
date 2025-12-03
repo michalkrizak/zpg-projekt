@@ -44,7 +44,7 @@ public:
 private:
     void createForestScene();
     void createSphereScene();
-    void createTriangleScene();
+    void createLoginScene();
     void createSolarScene();
     void createBackfaceTestScene();
     void createTreePlantingScene();
